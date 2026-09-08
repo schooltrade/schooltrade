@@ -130,7 +130,7 @@ const RegistrationForm = ({ onSuccess }: RegistrationFormProps) => {
       </div>
 
       <Button type="submit" className="h-14 w-full rounded-xl bg-gradient-to-l from-primary to-accent text-base font-semibold shadow-glow sm:h-16" disabled={loading}>
-        <span>{loading ? "רושם..." : "צור חשבון"}</span>
+        <span>{loading ? "רושם..." : "הירשם"}</span>
         {!loading && <ArrowLeft className="mr-auto h-5 w-5" aria-hidden="true" />}
       </Button>
 
