@@ -29,6 +29,7 @@ import { KeifTab } from "@/components/keif/KeifTab";
 import { SchoolNews } from "@/components/games/SchoolNews";
 import { BooksTab } from "@/components/books/BooksTab";
 import { DailyStreak } from "@/components/DailyStreak";
+import { BookOpen, Check, ShieldCheck } from "lucide-react";
 
 import { playSound } from "@/lib/sounds";
 
@@ -248,26 +249,93 @@ const Index = () => {
           !schoolVerified ? (
             <SchoolCodeGate onVerified={() => setSchoolVerified(true)} />
           ) : (
-            <div
-              className="max-w-md mx-auto"
-              style={{ animation: "fadeSlideIn 0.4s ease-out" }}
-            >
-              <div className="bg-card rounded-2xl shadow-soft p-8 space-y-6">
-                {view === "login" ? (
-                  <>
-                    <LoginForm onSuccess={handleLoginSuccess} />
-                    <Button variant="ghost" className="w-full hover:scale-[1.01] transition-transform" onClick={() => setView("register")}>
-                      עדיין אין לך חשבון? הירשם כאן
-                    </Button>
-                  </>
-                ) : (
-                  <>
-                    <RegistrationForm onSuccess={handleRegisterSuccess} />
-                    <Button variant="ghost" className="w-full hover:scale-[1.01] transition-transform" onClick={() => setView("login")}>
-                      כבר יש לך חשבון? התחבר כאן
-                    </Button>
-                  </>
-                )}
+            <div className="relative mx-auto w-full max-w-6xl overflow-hidden rounded-2xl border border-border/70 bg-card/45 shadow-2xl backdrop-blur-xl" style={{ animation: "fadeSlideIn 0.4s ease-out" }}>
+              <div className="pointer-events-none absolute inset-0" aria-hidden="true">
+                <div className="absolute inset-x-24 top-0 h-px bg-gradient-to-r from-transparent via-primary/70 to-transparent" />
+                <div className="absolute -left-24 top-1/4 h-72 w-72 rounded-full bg-primary/10 blur-3xl" />
+                <div className="absolute -right-24 bottom-0 h-64 w-64 rounded-full bg-accent/10 blur-3xl" />
+              </div>
+
+              <div className="relative grid min-h-[620px] lg:grid-cols-[0.82fr_1.18fr]" dir="ltr">
+                <aside className="relative hidden overflow-hidden border-r border-border/60 bg-background/55 p-10 lg:flex lg:flex-col lg:justify-between" dir="rtl">
+                  <div>
+                    <div className="mb-12 flex h-14 w-14 items-center justify-center rounded-xl border border-primary/25 bg-gradient-to-br from-primary/20 to-accent/10 text-primary shadow-glow">
+                      <BookOpen className="h-7 w-7" strokeWidth={1.5} aria-hidden="true" />
+                    </div>
+                    <p className="text-sm font-medium text-primary">השלב הבא שלך</p>
+                    <h2 className="mt-3 max-w-sm text-4xl font-semibold leading-tight text-foreground">
+                      קהילה אחת,<br />כל מה שקורה בבית הספר
+                    </h2>
+                    <p className="mt-5 max-w-sm text-base leading-7 text-muted-foreground">
+                      התחבר למודעות, משחקים, ספרים וחדשות — במקום אחד שנבנה לתלמידים.
+                    </p>
+                  </div>
+
+                  <div className="space-y-3 border-t border-border/60 pt-7">
+                    {["גישה מאובטחת באמצעות קוד אישי", "מותאם לקהילת בית הספר", "הפרטים שלך נשמרים בבטחה"].map((item) => (
+                      <div key={item} className="flex items-center gap-3 text-sm text-muted-foreground">
+                        <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-primary/20 bg-primary/10 text-primary">
+                          <Check className="h-3.5 w-3.5" aria-hidden="true" />
+                        </span>
+                        {item}
+                      </div>
+                    ))}
+                  </div>
+                </aside>
+
+                <section className="flex min-w-0 items-center px-5 py-7 sm:px-9 sm:py-10 lg:px-14" dir="rtl" aria-label={view === "login" ? "התחברות" : "הרשמה"}>
+                  <div className="mx-auto w-full max-w-lg">
+                    <div className="mb-8 flex items-center justify-between border-b border-border/60" role="tablist" aria-label="בחירת מצב כניסה">
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        role="tab"
+                        aria-selected={view === "login"}
+                        onClick={() => setView("login")}
+                        className={`relative h-14 flex-1 rounded-none text-base hover:bg-transparent ${view === "login" ? "text-foreground" : "text-muted-foreground"}`}
+                      >
+                        התחברות
+                        {view === "login" && <span className="absolute inset-x-5 -bottom-px h-0.5 rounded-full bg-primary shadow-glow" />}
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        role="tab"
+                        aria-selected={view === "register"}
+                        onClick={() => setView("register")}
+                        className={`relative h-14 flex-1 rounded-none text-base hover:bg-transparent ${view === "register" ? "text-foreground" : "text-muted-foreground"}`}
+                      >
+                        הרשמה
+                        {view === "register" && <span className="absolute inset-x-5 -bottom-px h-0.5 rounded-full bg-accent shadow-glow" />}
+                      </Button>
+                    </div>
+
+                    <div key={view} className="animate-fade-in-scale">
+                      {view === "login" ? (
+                        <LoginForm onSuccess={handleLoginSuccess} />
+                      ) : (
+                        <RegistrationForm onSuccess={handleRegisterSuccess} />
+                      )}
+                    </div>
+
+                    <div className="mt-7 border-t border-border/60 pt-5 text-center">
+                      {view === "login" ? (
+                        <Button variant="link" className="h-auto text-sm text-muted-foreground hover:text-primary" onClick={() => setView("register")}>
+                          עדיין אין לך חשבון? <span className="mr-1 font-semibold text-primary">הירשם כאן</span>
+                        </Button>
+                      ) : (
+                        <Button variant="link" className="h-auto text-sm text-muted-foreground hover:text-primary" onClick={() => setView("login")}>
+                          כבר יש לך חשבון? <span className="mr-1 font-semibold text-primary">התחבר כאן</span>
+                        </Button>
+                      )}
+                    </div>
+
+                    <div className="mt-5 flex items-center justify-center gap-2 text-xs text-muted-foreground/80">
+                      <ShieldCheck className="h-4 w-4 text-primary" strokeWidth={1.5} aria-hidden="true" />
+                      חיבור מאובטח לקהילת Schooltrade
+                    </div>
+                  </div>
+                </section>
               </div>
             </div>
           )
