@@ -6,7 +6,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useToast } from "@/hooks/use-toast";
-import { Camera, Upload } from "lucide-react";
+import { Camera, Upload, ImagePlus, Tag, FileText, Sparkles, SwitchCamera, X } from "lucide-react";
 
 interface CreatePostProps {
   userCode: string;
@@ -228,57 +228,78 @@ const CreatePost = ({ userCode, userName, onSuccess }: CreatePostProps) => {
   };
 
   return (
-    <div className="max-w-2xl mx-auto">
-      <div className="bg-card rounded-2xl shadow-soft p-8">
-        <h2 className="text-2xl font-bold mb-6 gradient-primary bg-clip-text text-transparent">
-          פרסם מודעה חדשה
-        </h2>
+    <section className="mx-auto w-full max-w-5xl" dir="rtl" aria-labelledby="create-listing-title">
+      <div className="relative overflow-hidden rounded-2xl border border-border/70 bg-card/45 shadow-2xl backdrop-blur-xl">
+        <div className="pointer-events-none absolute inset-x-16 top-0 h-px bg-gradient-to-r from-transparent via-primary/70 to-transparent" aria-hidden="true" />
+        <div className="relative border-b border-border/60 px-5 py-6 sm:px-8 sm:py-8">
+          <div className="flex items-center gap-4">
+            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-primary/25 bg-primary/10 text-primary shadow-glow">
+              <ImagePlus className="h-6 w-6" strokeWidth={1.6} aria-hidden="true" />
+            </div>
+            <div>
+              <p className="text-xs font-semibold text-primary">מודעה חדשה</p>
+              <h2 id="create-listing-title" className="mt-1 text-2xl font-semibold text-foreground sm:text-3xl">פרסם מוצר ב־Schooltrade</h2>
+              <p className="mt-1 text-sm text-muted-foreground">תמונה טובה, תיאור ברור ומחיר — וזה מוכן לפרסום.</p>
+            </div>
+          </div>
+        </div>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
+        <form onSubmit={handleSubmit} className="relative grid gap-0 lg:grid-cols-[1.05fr_0.95fr]" dir="rtl">
+          <div className="space-y-7 border-b border-border/60 p-5 sm:p-8 lg:border-b-0 lg:border-l">
           {/* Posting Mode */}
-          <div className="space-y-4">
-            <Label>סוג המודעה</Label>
-            <RadioGroup value={postingMode} onValueChange={(value) => setPostingMode(value as "regular" | "auction")}>
-              <div className="flex items-center space-x-2 space-x-reverse">
+          <div className="space-y-3">
+            <div className="flex items-center gap-2 text-sm font-medium text-foreground">
+              <Tag className="h-4 w-4 text-primary" aria-hidden="true" />
+              <Label>סוג המודעה</Label>
+            </div>
+            <RadioGroup value={postingMode} onValueChange={(value) => setPostingMode(value as "regular" | "auction")} className="grid grid-cols-2 gap-2 rounded-xl border border-border/60 bg-background/45 p-1.5">
+              <div className={`flex min-h-12 items-center gap-2 rounded-lg border px-3 transition-all ${postingMode === "regular" ? "border-primary/35 bg-primary/10 text-foreground shadow-glow" : "border-transparent text-muted-foreground"}`}>
                 <RadioGroupItem value="regular" id="regular" />
-                <Label htmlFor="regular" className="font-normal cursor-pointer">מודעה רגילה</Label>
+                <Label htmlFor="regular" className="cursor-pointer text-sm font-medium">מודעה רגילה</Label>
               </div>
-              <div className="flex items-center space-x-2 space-x-reverse">
+              <div className={`flex min-h-12 items-center gap-2 rounded-lg border px-3 transition-all ${postingMode === "auction" ? "border-primary/35 bg-primary/10 text-foreground shadow-glow" : "border-transparent text-muted-foreground"}`}>
                 <RadioGroupItem value="auction" id="auction" />
-                <Label htmlFor="auction" className="font-normal cursor-pointer">סחירת פלומביט</Label>
+                <Label htmlFor="auction" className="cursor-pointer text-sm font-medium">סחירת פלומביט</Label>
               </div>
             </RadioGroup>
             {postingMode === "auction" && (
-              <p className="text-sm text-muted-foreground bg-muted/50 p-3 rounded-lg">
+              <p className="rounded-lg border border-primary/15 bg-primary/5 p-3 text-sm leading-6 text-muted-foreground animate-fade-in-scale">
                 במצב סחירת פלומביט, משתמשים אחרים יכולים בעילום שם להעלות את מחיר המוצר עד לסכום של 200₪. המחיר יתעדכן בזמן אמת, והמודעה לא ניתנת לעריכה במהלך המכירה.
               </p>
             )}
           </div>
 
           {/* Photo Capture */}
-          <div className="space-y-4">
-            <Label>תמונת המוצר</Label>
+          <div className="space-y-3">
+            <div className="flex items-center gap-2 text-sm font-medium text-foreground">
+              <Camera className="h-4 w-4 text-primary" aria-hidden="true" />
+              <Label>תמונת המוצר</Label>
+            </div>
             
             {!cameraActive && !photo && (
               <>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-2 gap-3 rounded-2xl border border-dashed border-border/80 bg-background/30 p-3 sm:p-4">
                   <Button
                     type="button"
                     onClick={() => startCamera()}
                     variant="outline"
-                    className="h-32 border-dashed flex-col"
+                    className="h-32 flex-col rounded-xl border-border/70 bg-card/50 hover:border-primary/40 hover:bg-primary/5 sm:h-40"
                   >
-                    <Camera className="w-8 h-8 mb-2 text-muted-foreground" />
-                    <span>צלם תמונה</span>
+                    <span className="mb-3 flex h-11 w-11 items-center justify-center rounded-full bg-primary/10 text-primary transition-transform group-hover:scale-105">
+                      <Camera className="h-5 w-5" />
+                    </span>
+                    <span className="text-sm font-medium">צלם תמונה</span>
                   </Button>
                   <Button
                     type="button"
                     onClick={triggerFileInput}
                     variant="outline"
-                    className="h-32 border-dashed flex-col"
+                    className="h-32 flex-col rounded-xl border-border/70 bg-card/50 hover:border-primary/40 hover:bg-primary/5 sm:h-40"
                   >
-                    <Upload className="w-8 h-8 mb-2 text-muted-foreground" />
-                    <span>בחר מהגלריה</span>
+                    <span className="mb-3 flex h-11 w-11 items-center justify-center rounded-full bg-accent/10 text-accent">
+                      <Upload className="h-5 w-5" />
+                    </span>
+                    <span className="text-sm font-medium">בחר מהגלריה</span>
                   </Button>
                 </div>
                 <input
@@ -300,36 +321,38 @@ const CreatePost = ({ userCode, userName, onSuccess }: CreatePostProps) => {
             )}
 
             {cameraActive && (
-              <div className="space-y-4">
-                <div className="relative bg-black rounded-lg overflow-hidden">
+              <div className="space-y-3 animate-fade-in-scale">
+                <div className="relative aspect-[4/3] overflow-hidden rounded-xl border border-border/70 bg-background">
                   <video
                     ref={videoRef}
                     autoPlay
                     playsInline
                     muted
-                    className="w-full rounded-lg"
+                    className="h-full w-full object-cover"
                   />
-                  <div className="absolute top-2 right-2 bg-red-500 text-white text-xs px-2 py-1 rounded-full animate-pulse">
+                  <div className="absolute right-3 top-3 rounded-full border border-destructive/30 bg-destructive/90 px-2.5 py-1 text-xs text-destructive-foreground shadow-soft animate-pulse">
                     ● מצלמה פעילה
                   </div>
                 </div>
                 <div className="flex gap-2">
-                  <Button type="button" onClick={capturePhoto} className="flex-1">
-                    📸 צלם
+                  <Button type="button" onClick={capturePhoto} className="h-11 flex-1 rounded-xl">
+                    <Camera className="ml-2 h-4 w-4" /> צלם
                   </Button>
-                  <Button type="button" onClick={switchCamera} variant="outline">
-                    🔄
+                  <Button type="button" onClick={switchCamera} variant="outline" size="icon" className="h-11 w-11 rounded-xl" aria-label="החלף מצלמה">
+                    <SwitchCamera className="h-4 w-4" />
                   </Button>
-                  <Button type="button" onClick={stopCamera} variant="outline">
-                    ביטול
+                  <Button type="button" onClick={stopCamera} variant="outline" size="icon" className="h-11 w-11 rounded-xl" aria-label="סגור מצלמה">
+                    <X className="h-4 w-4" />
                   </Button>
                 </div>
               </div>
             )}
 
             {photo && !cameraActive && (
-              <div className="space-y-4">
-                <img src={photo} alt="Preview" className="w-full rounded-lg" />
+              <div className="space-y-3 animate-fade-in-scale">
+                <div className="aspect-[4/3] overflow-hidden rounded-xl border border-border/70 bg-background shadow-soft">
+                  <img src={photo} alt="תצוגה מקדימה של המוצר" className="h-full w-full object-cover" />
+                </div>
                 <Button
                   type="button"
                   onClick={() => {
@@ -338,29 +361,37 @@ const CreatePost = ({ userCode, userName, onSuccess }: CreatePostProps) => {
                     setPhotoBlob(null);
                   }}
                   variant="outline"
-                  className="w-full"
+                  className="h-11 w-full rounded-xl"
                 >
                   בחר תמונה אחרת
                 </Button>
               </div>
             )}
           </div>
+          </div>
+
+          <div className="flex flex-col p-5 sm:p-8">
+            <div className="mb-7 flex items-center gap-2 text-sm font-medium text-foreground">
+              <FileText className="h-4 w-4 text-primary" aria-hidden="true" />
+              פרטי המודעה
+            </div>
 
           {/* Description */}
-          <div className="space-y-2">
+          <div className="space-y-2.5">
             <Label htmlFor="description">תיאור המוצר</Label>
             <Textarea
               id="description"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               placeholder="תאר את המוצר שלך..."
-              rows={4}
+              rows={6}
               disabled={loading}
+              className="min-h-36 resize-none rounded-xl border-border/80 bg-background/55 px-4 py-3 leading-6 shadow-inner placeholder:text-muted-foreground/60 focus-visible:border-primary focus-visible:ring-4 focus-visible:ring-primary/15"
             />
           </div>
 
           {/* Price */}
-          <div className="space-y-2">
+          <div className="mt-6 space-y-2.5">
             <Label htmlFor="price">מחיר</Label>
             <Input
               id="price"
@@ -369,13 +400,14 @@ const CreatePost = ({ userCode, userName, onSuccess }: CreatePostProps) => {
               onChange={(e) => setPrice(e.target.value)}
               placeholder="למשל: 100 ₪"
               disabled={loading}
+              className="h-14 rounded-xl border-border/80 bg-background/55 px-4 text-base shadow-inner placeholder:text-muted-foreground/60 focus-visible:border-primary focus-visible:ring-4 focus-visible:ring-primary/15"
             />
           </div>
 
           {uploadProgress !== null && (
-            <div className="space-y-2">
-              <div className="text-sm text-muted-foreground">מעלה... {uploadProgress}%</div>
-              <div className="h-2 bg-muted rounded-full overflow-hidden">
+            <div className="mt-6 space-y-2 rounded-xl border border-border/60 bg-background/35 p-4">
+              <div className="flex items-center justify-between text-sm text-muted-foreground"><span>מעלה תמונה...</span><span className="tabular-nums">{uploadProgress}%</span></div>
+              <div className="h-1.5 overflow-hidden rounded-full bg-muted">
                 <div
                   className="h-full gradient-primary transition-all duration-300"
                   style={{ width: `${uploadProgress}%` }}
@@ -384,12 +416,14 @@ const CreatePost = ({ userCode, userName, onSuccess }: CreatePostProps) => {
             </div>
           )}
 
-          <Button type="submit" className="w-full" disabled={loading}>
+          <Button type="submit" className="mt-auto h-14 w-full rounded-xl bg-gradient-to-l from-primary to-accent text-base font-semibold shadow-glow lg:mt-8" disabled={loading}>
+            {!loading && <Sparkles className="ml-2 h-4 w-4" aria-hidden="true" />}
             {loading ? "מפרסם..." : "פרסם מודעה"}
           </Button>
+          </div>
         </form>
       </div>
-    </div>
+    </section>
   );
 };
 
