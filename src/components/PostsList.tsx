@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
-import { Trash2, MessageCircle, Search, Bookmark, Share2, SlidersHorizontal } from "lucide-react";
+import { Trash2, MessageCircle, Search, Bookmark, Share2, SlidersHorizontal, PackageOpen, CalendarDays, Gavel, Store, ArrowUpDown } from "lucide-react";
 import { VerifiedBadge } from "@/components/VerifiedBadge";
 import { PremiumBadge } from "@/components/PremiumBadge";
 import { AnimatedUsername } from "@/components/AnimatedUsername";
@@ -333,52 +333,74 @@ const PostsList = ({ userCode, userName, isAdmin }: PostsListProps) => {
 
   if (loading) {
     return (
-      <div className="text-center py-12">
-        <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-        <p className="mt-4 text-muted-foreground">טוען מודעות...</p>
+      <div className="mx-auto flex min-h-72 max-w-5xl flex-col items-center justify-center rounded-2xl border border-border/70 bg-card/45 text-center shadow-2xl backdrop-blur-xl" dir="rtl">
+        <div className="h-9 w-9 animate-spin rounded-full border-2 border-primary/20 border-b-primary"></div>
+        <p className="mt-4 text-sm text-muted-foreground">טוען מודעות...</p>
       </div>
     );
   }
 
   if (posts.length === 0) {
     return (
-      <div className="text-center py-12 bg-card rounded-2xl shadow-soft">
-        <p className="text-muted-foreground">אין עדיין מודעות במערכת</p>
+      <div className="mx-auto flex min-h-80 max-w-5xl flex-col items-center justify-center rounded-2xl border border-border/70 bg-card/45 px-6 text-center shadow-2xl backdrop-blur-xl" dir="rtl">
+        <div className="flex h-14 w-14 items-center justify-center rounded-xl border border-primary/25 bg-primary/10 text-primary shadow-glow">
+          <PackageOpen className="h-7 w-7" strokeWidth={1.5} aria-hidden="true" />
+        </div>
+        <h2 className="mt-5 text-2xl font-semibold text-foreground">אין עדיין מודעות במערכת</h2>
+        <p className="mt-2 max-w-sm text-sm leading-6 text-muted-foreground">המודעה הראשונה שתפורסם תופיע כאן עם התמונה, המחיר וכל הפעולות הזמינות.</p>
       </div>
     );
   }
 
   return (
-    <div className="space-y-4">
+    <section className="mx-auto w-full max-w-6xl space-y-6" dir="rtl" aria-labelledby="listings-title">
+      <div className="flex flex-col gap-5 border-b border-border/60 pb-6 sm:flex-row sm:items-end sm:justify-between">
+        <div className="flex items-center gap-4">
+          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-primary/25 bg-primary/10 text-primary shadow-glow">
+            <Store className="h-6 w-6" strokeWidth={1.6} aria-hidden="true" />
+          </div>
+          <div>
+            <p className="text-xs font-semibold text-primary">לוח המודעות</p>
+            <h2 id="listings-title" className="mt-1 text-2xl font-semibold text-foreground sm:text-3xl">המודעות שלי</h2>
+            <p className="mt-1 text-sm text-muted-foreground">כל המוצרים, השיחות והפעולות במקום אחד.</p>
+          </div>
+        </div>
+        <div className="flex items-center gap-2 rounded-xl border border-border/60 bg-card/45 px-4 py-2 text-sm text-muted-foreground backdrop-blur-xl">
+          <span className="h-2 w-2 rounded-full bg-primary shadow-glow" />
+          <span>{filteredPosts.length} מודעות</span>
+        </div>
+      </div>
+
       {/* Premium Feature Bar: Search, Sort, Filter */}
-      <div className="flex flex-wrap gap-2 items-center bg-card rounded-xl p-3 border border-border shadow-soft" dir="rtl">
+      <div className="flex flex-wrap items-center gap-2 rounded-xl border border-border/70 bg-card/45 p-2 shadow-soft backdrop-blur-xl" dir="rtl">
         <Button
           variant="ghost" size="sm"
           onClick={() => { setShowSearch(v => !v); playSound("click"); }}
-          className={`gap-1.5 ${showSearch ? "text-primary" : ""}`}
+          className={`h-10 rounded-lg gap-1.5 ${showSearch ? "bg-primary/10 text-primary" : "text-muted-foreground"}`}
         >
           <Search className="w-4 h-4" /> חיפוש
         </Button>
         <Button
           variant="ghost" size="sm"
           onClick={() => { setShowFilters(v => !v); playSound("click"); }}
-          className={`gap-1.5 ${showFilters ? "text-primary" : ""}`}
+          className={`h-10 rounded-lg gap-1.5 ${showFilters ? "bg-primary/10 text-primary" : "text-muted-foreground"}`}
         >
           <SlidersHorizontal className="w-4 h-4" /> מיון וסינון
         </Button>
-        <div className="text-xs text-muted-foreground mr-auto">
-          {filteredPosts.length} מודעות
+        <div className="mr-auto hidden items-center gap-2 text-xs text-muted-foreground sm:flex">
+          <ArrowUpDown className="h-3.5 w-3.5" aria-hidden="true" />
+          {sortMode === "newest" ? "חדש ביותר" : sortMode === "price_asc" ? "מחיר עולה" : sortMode === "price_desc" ? "מחיר יורד" : "מכירה פומבית"}
         </div>
       </div>
 
       {showSearch && (
-        <div className="relative" style={{ animation: "fadeSlideIn 0.25s ease-out" }}>
+        <div className="relative animate-fade-in-scale">
           <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
           <Input
             placeholder="חפש מודעות..."
             value={searchQuery}
             onChange={e => setSearchQuery(e.target.value)}
-            className="pr-10"
+            className="h-12 rounded-xl border-border/80 bg-card/45 pr-10 shadow-inner focus-visible:border-primary focus-visible:ring-4 focus-visible:ring-primary/15"
             dir="rtl"
             autoFocus
           />
@@ -386,7 +408,7 @@ const PostsList = ({ userCode, userName, isAdmin }: PostsListProps) => {
       )}
 
       {showFilters && (
-        <div className="flex flex-wrap gap-2" style={{ animation: "fadeSlideIn 0.25s ease-out" }}>
+        <div className="flex flex-wrap gap-2 animate-fade-in-scale">
           {([
             { key: "newest", label: "🕐 חדש ביותר" },
             { key: "price_asc", label: "💰 מחיר עולה" },
@@ -398,7 +420,7 @@ const PostsList = ({ userCode, userName, isAdmin }: PostsListProps) => {
               size="sm"
               variant={sortMode === opt.key ? "default" : "outline"}
               onClick={() => { setSortMode(opt.key); playSound("click"); }}
-              className="transition-all duration-200"
+              className="rounded-lg transition-all duration-200"
             >
               {opt.label}
             </Button>
@@ -406,45 +428,45 @@ const PostsList = ({ userCode, userName, isAdmin }: PostsListProps) => {
         </div>
       )}
 
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+      <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
       {filteredPosts.map((post) => (
         <div
           key={post.id}
-          className="bg-card rounded-2xl shadow-soft overflow-hidden hover:shadow-glow transition-all duration-300 hover:scale-[1.01]"
+          className="group relative overflow-hidden rounded-2xl border border-border/70 bg-card/45 shadow-soft backdrop-blur-xl transition-all duration-300 hover:-translate-y-1 hover:border-primary/30 hover:shadow-glow"
           style={{ animation: "fadeSlideIn 0.3s ease-out" }}
         >
           {/* Image */}
-          <img
-            src={post.photo_url}
-            alt={post.description}
-            className="w-full h-64 object-cover"
-          />
+          <div className="relative aspect-[4/3] overflow-hidden bg-muted">
+            <img src={post.photo_url} alt={post.description} loading="lazy" className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.03]" />
+            <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-card/90 to-transparent" aria-hidden="true" />
+            {post.posting_mode === "auction" && (
+              <span className="absolute right-3 top-3 flex items-center gap-1.5 rounded-full border border-primary/25 bg-card/80 px-2.5 py-1 text-xs font-medium text-primary shadow-soft backdrop-blur-md">
+                <Gavel className="h-3.5 w-3.5" aria-hidden="true" /> סחירת פלומביט
+              </span>
+            )}
+          </div>
 
           {/* Content */}
-          <div className="p-6 space-y-4">
+          <div className="space-y-4 p-5">
             {/* Header */}
-            <div className="flex items-start justify-between gap-2">
+            <div className="flex items-start justify-between gap-3">
               <div className="flex-1">
                 <div className="flex items-center gap-1.5">
                   <AnimatedUsername userCode={post.owner_code}>
-                    <p className="font-semibold text-lg">{post.owner_name}</p>
+                    <p className="text-base font-semibold text-foreground">{post.owner_name}</p>
                   </AnimatedUsername>
                   <PremiumBadge userCode={post.owner_code} />
                   <VerifiedBadge userCode={post.owner_code} />
                 </div>
-                <p className="text-sm text-muted-foreground">
+                <p className="mt-1 flex items-center gap-1.5 text-xs text-muted-foreground">
+                  <CalendarDays className="h-3.5 w-3.5" aria-hidden="true" />
                   {new Date(post.created_at).toLocaleDateString("he-IL")}
                 </p>
-                {post.posting_mode === "auction" && (
-                  <span className="inline-block mt-1 text-xs bg-primary/10 text-primary px-2 py-0.5 rounded">
-                    סחירת פלומביט
-                  </span>
-                )}
               </div>
-              <div className="text-left">
+              <div className="shrink-0 text-left">
                 {post.posting_mode === "auction" ? (
                   <div>
-                    <div className="text-primary font-bold text-xl">
+                    <div className="text-xl font-bold text-primary">
                       {parseFloat(post.original_price || post.price) + (post.current_bid_price || 0)}₪
                     </div>
                     {post.current_bid_price! > 0 && (
@@ -454,39 +476,39 @@ const PostsList = ({ userCode, userName, isAdmin }: PostsListProps) => {
                     )}
                   </div>
                 ) : (
-                  <div className="text-primary font-bold text-xl">{post.price}</div>
+                  <div className="text-xl font-bold text-primary">{post.price}</div>
                 )}
               </div>
             </div>
 
             {/* Premium Feature: Bookmark & Share */}
-            <div className="flex gap-2 justify-end border-t pt-2">
+            <div className="flex justify-end gap-1 border-t border-border/60 pt-3">
               <Button
                 variant="ghost" size="sm"
                 onClick={() => toggleBookmark(post.id)}
-                className={`gap-1 transition-all duration-200 ${bookmarked.has(post.id) ? "text-primary" : "text-muted-foreground"}`}
+                className={`rounded-lg gap-1 transition-all duration-200 ${bookmarked.has(post.id) ? "bg-primary/10 text-primary" : "text-muted-foreground"}`}
               >
                 <Bookmark className={`w-4 h-4 ${bookmarked.has(post.id) ? "fill-primary" : ""}`} />
                 {bookmarked.has(post.id) ? "נשמר" : "שמור"}
               </Button>
-              <Button variant="ghost" size="sm" onClick={() => handleShare(post)} className="gap-1 text-muted-foreground">
+              <Button variant="ghost" size="sm" onClick={() => handleShare(post)} className="rounded-lg gap-1 text-muted-foreground">
                 <Share2 className="w-4 h-4" /> שתף
               </Button>
             </div>
 
             {/* Description */}
-            <p className="text-foreground">{post.description}</p>
+            <p className="min-h-12 text-sm leading-6 text-foreground">{post.description}</p>
 
             {/* Comments */}
             {comments[post.id] && comments[post.id].length > 0 && (
-              <div className="space-y-2 border-t pt-4">
+              <div className="space-y-2 border-t border-border/60 pt-4">
                 <div className="flex items-center gap-2 text-sm font-semibold text-muted-foreground">
                   <MessageCircle className="w-4 h-4" />
                   <span>תגובות ({comments[post.id].length})</span>
                 </div>
                 <div className="space-y-2 max-h-40 overflow-y-auto">
                   {comments[post.id].map((comment) => (
-                    <div key={comment.id} className="bg-muted/50 rounded-lg p-3 text-sm">
+                    <div key={comment.id} className="rounded-lg border border-border/40 bg-background/35 p-3 text-sm">
                       <div className="flex items-start justify-between gap-2">
                         <div className="flex-1">
                           <div className="flex items-center gap-1">
@@ -529,9 +551,10 @@ const PostsList = ({ userCode, userName, isAdmin }: PostsListProps) => {
                     placeholder="סכום להוספה..."
                     min="1"
                     max={post.max_bid_limit! - (post.current_bid_price || 0)}
+                    className="h-11 rounded-xl bg-background/45"
                   />
                   <Button
-                    size="sm"
+                    size="sm" className="h-11 rounded-xl"
                     onClick={() => handlePlaceBid(post.id, post)}
                     disabled={!bidAmounts[post.id]}
                   >
@@ -546,13 +569,14 @@ const PostsList = ({ userCode, userName, isAdmin }: PostsListProps) => {
 
             {/* Add Comment */}
             {userCode ? (
-              <div className="flex gap-2">
+              <div className="flex gap-2 border-t border-border/60 pt-4">
                 <Input
                   value={commentTexts[post.id] || ""}
                   onChange={(e) =>
                     setCommentTexts((prev) => ({ ...prev, [post.id]: e.target.value }))
                   }
                   placeholder="הוסף תגובה..."
+                  className="h-11 min-w-0 rounded-xl bg-background/45"
                   onKeyPress={(e) => {
                     if (e.key === "Enter") {
                       handleAddComment(post.id);
@@ -560,7 +584,7 @@ const PostsList = ({ userCode, userName, isAdmin }: PostsListProps) => {
                   }}
                 />
                 <Button
-                  size="sm"
+                  size="sm" className="h-11 rounded-xl px-4"
                   onClick={() => handleAddComment(post.id)}
                   disabled={!commentTexts[post.id]?.trim()}
                 >
@@ -578,7 +602,7 @@ const PostsList = ({ userCode, userName, isAdmin }: PostsListProps) => {
               <Button
                 variant="destructive"
                 size="sm"
-                className="w-full"
+                className="h-11 w-full rounded-xl bg-destructive/10 text-destructive hover:bg-destructive/20"
                 onClick={() => handleDeletePost(post)}
               >
                 <Trash2 className="w-4 h-4 ml-2" />
@@ -589,7 +613,7 @@ const PostsList = ({ userCode, userName, isAdmin }: PostsListProps) => {
         </div>
       ))}
       </div>
-    </div>
+    </section>
   );
 };
 
