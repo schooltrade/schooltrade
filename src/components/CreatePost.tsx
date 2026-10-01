@@ -246,29 +246,6 @@ const CreatePost = ({ userCode, userName, onSuccess }: CreatePostProps) => {
 
         <form onSubmit={handleSubmit} className="relative grid gap-0 lg:grid-cols-[1.05fr_0.95fr]" dir="rtl">
           <div className="space-y-7 border-b border-border/60 p-5 sm:p-8 lg:border-b-0 lg:border-l">
-          {/* Posting Mode */}
-          <div className="space-y-3">
-            <div className="flex items-center gap-2 text-sm font-medium text-foreground">
-              <Tag className="h-4 w-4 text-primary" aria-hidden="true" />
-              <Label>סוג המודעה</Label>
-            </div>
-            <RadioGroup value={postingMode} onValueChange={(value) => setPostingMode(value as "regular" | "auction")} className="grid grid-cols-2 gap-2 rounded-xl border border-border/60 bg-background/45 p-1.5">
-              <div className={`flex min-h-12 items-center gap-2 rounded-lg border px-3 transition-all ${postingMode === "regular" ? "border-primary/35 bg-primary/10 text-foreground shadow-glow" : "border-transparent text-muted-foreground"}`}>
-                <RadioGroupItem value="regular" id="regular" />
-                <Label htmlFor="regular" className="cursor-pointer text-sm font-medium">מודעה רגילה</Label>
-              </div>
-              <div className={`flex min-h-12 items-center gap-2 rounded-lg border px-3 transition-all ${postingMode === "auction" ? "border-primary/35 bg-primary/10 text-foreground shadow-glow" : "border-transparent text-muted-foreground"}`}>
-                <RadioGroupItem value="auction" id="auction" />
-                <Label htmlFor="auction" className="cursor-pointer text-sm font-medium">סחירת פלומביט</Label>
-              </div>
-            </RadioGroup>
-            {postingMode === "auction" && (
-              <p className="rounded-lg border border-primary/15 bg-primary/5 p-3 text-sm leading-6 text-muted-foreground animate-fade-in-scale">
-                במצב סחירת פלומביט, משתמשים אחרים יכולים בעילום שם להעלות את מחיר המוצר עד לסכום של 200₪. המחיר יתעדכן בזמן אמת, והמודעה לא ניתנת לעריכה במהלך המכירה.
-              </p>
-            )}
-          </div>
-
           {/* Photo Capture */}
           <div className="space-y-3">
             <div className="flex items-center gap-2 text-sm font-medium text-foreground">

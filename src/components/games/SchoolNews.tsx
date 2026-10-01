@@ -1,3 +1,4 @@
+import { LinkifiedText } from "@/components/LinkifiedText";
 import { useState, useEffect, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -385,7 +386,7 @@ export const SchoolNews = ({ userCode, userName }: SchoolNewsProps) => {
                     </span>
                   </div>
                   <p className="text-lg leading-relaxed whitespace-pre-wrap">
-                    {item.content}
+                    <LinkifiedText text={item.content} />
                   </p>
                   {isPublisher && (
                     <Button
