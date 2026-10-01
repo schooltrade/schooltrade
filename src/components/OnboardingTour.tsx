@@ -27,8 +27,13 @@ const STEPS: Step[] = [
 
 const findTarget = (id?: string) => {
   if (!id) return null;
-  const el = document.querySelector<HTMLElement>(`[data-tour="${id}"]`);
-  if (!el) return null;
+  const root = document.querySelector<HTMLElement>(`[data-tour="${id}"]`);
+  if (!root) return null;
+  // Full-screen wrappers (e.g. the school-code screen) — spotlight the form inside instead.
+  const r0 = root.getBoundingClientRect();
+  const el = r0.width === 0 || r0.height === 0 || r0.height > window.innerHeight * 0.9
+    ? root.querySelector<HTMLElement>("form") ?? root
+    : root;
   const r = el.getBoundingClientRect();
   return r.width > 0 && r.height > 0 ? el : null;
 };
@@ -130,7 +135,7 @@ export const OnboardingTour = ({ open, onClose }: { open: boolean; onClose: () =
       >
         <div className="mb-4 flex items-center justify-between gap-3">
           <span className="flex items-center gap-1.5 text-xs font-medium text-primary">
-            <Sparkles className="h-3.5 w-3.5" aria-hidden="true" /> הדרכה · {index + 1} / {total}
+            <Sparkles className="h-3.5 w-3.5" aria-hidden="true" /> הדרכה · <span dir="ltr">{index + 1} / {total}</span>
           </span>
           <button onClick={finish} aria-label="סגור הדרכה" className="rounded-full p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground">
             <X className="h-4 w-4" />
