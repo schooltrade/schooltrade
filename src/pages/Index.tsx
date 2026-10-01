@@ -29,7 +29,8 @@ import { KeifTab } from "@/components/keif/KeifTab";
 import { SchoolNews } from "@/components/games/SchoolNews";
 import { BooksTab } from "@/components/books/BooksTab";
 import { DailyStreak } from "@/components/DailyStreak";
-import { BookOpen, Check, ShieldCheck } from "lucide-react";
+import { OnboardingTour, TOUR_STORAGE_KEY } from "@/components/OnboardingTour";
+import { BookOpen, Check, ShieldCheck, HelpCircle } from "lucide-react";
 
 import { playSound } from "@/lib/sounds";
 
@@ -49,6 +50,14 @@ const Index = () => {
   const { isChristmasActive, isChristmasBackgroundOnly } = useChristmas();
   const { toast } = useToast();
   const logoImage = useTemporaryLogo();
+  const [tourOpen, setTourOpen] = useState(false);
+
+  useEffect(() => {
+    if (localStorage.getItem(TOUR_STORAGE_KEY) !== "1") {
+      const t = setTimeout(() => setTourOpen(true), 900);
+      return () => clearTimeout(t);
+    }
+  }, []);
 
   useEffect(() => {
     setTimeout(() => {
@@ -191,6 +200,7 @@ const Index = () => {
     <Button
       variant={view === v ? "default" : "outline"}
       onClick={() => switchView(v)}
+      data-tour={`nav-${v}`}
       onMouseEnter={() => playSound("hover")}
       className={`flex-1 min-w-[140px] transition-all duration-300 ${view === v ? "scale-[1.02] shadow-md" : "hover:scale-[1.01]"} ${className}`}
     >
@@ -204,6 +214,7 @@ const Index = () => {
       className={`min-h-screen transition-all duration-1000 ${getBackgroundClass()} ${mounted ? "opacity-100" : "opacity-0"}`}
       style={{ transition: "opacity 0.5s ease, background 1s ease" }}
     >
+      <OnboardingTour open={tourOpen} onClose={() => setTourOpen(false)} />
       {user && <DailyStreak userCode={user.code} />}
       {isHalloweenActive && <HalloweenDecorations />}
       {(isChristmasActive || isChristmasBackgroundOnly) && <ChristmasDecorations />}
@@ -229,6 +240,10 @@ const Index = () => {
               Schooltrade
             </h1>
           </div>
+          <div className="flex items-center gap-2 sm:gap-4">
+          <Button variant="outline" size="sm" data-tour="help-button" onClick={() => setTourOpen(true)} className="gap-1.5 rounded-full border-primary/30 hover:border-primary/60">
+            <HelpCircle className="h-4 w-4" aria-hidden="true" /> הדרכה
+          </Button>
           {user && (
             <div className="flex items-center gap-4">
               <span className="text-sm text-muted-foreground flex items-center gap-1.5">
@@ -241,13 +256,14 @@ const Index = () => {
               </Button>
             </div>
           )}
+          </div>
         </div>
       </header>
 
       <main className={`container mx-auto px-4 py-8 ${isChristmasActive ? 'mt-10' : ''}`}>
         {!user ? (
           !schoolVerified ? (
-            <SchoolCodeGate onVerified={() => setSchoolVerified(true)} />
+            <div data-tour="school-gate"><SchoolCodeGate onVerified={() => setSchoolVerified(true)} /></div>
           ) : (
             <div className="relative mx-auto w-full max-w-6xl overflow-hidden rounded-2xl border border-border/70 bg-card/45 shadow-2xl backdrop-blur-xl" style={{ animation: "fadeSlideIn 0.4s ease-out" }}>
               <div className="pointer-events-none absolute inset-0" aria-hidden="true">
@@ -283,7 +299,7 @@ const Index = () => {
                   </div>
                 </aside>
 
-                <section className="flex min-w-0 items-center px-5 py-7 sm:px-9 sm:py-10 lg:px-14" dir="rtl" aria-label={view === "login" ? "התחברות" : "הרשמה"}>
+                <section data-tour="auth-form" className="flex min-w-0 items-center px-5 py-7 sm:px-9 sm:py-10 lg:px-14" dir="rtl" aria-label={view === "login" ? "התחברות" : "הרשמה"}>
                   <div className="mx-auto w-full max-w-lg">
                     <div className="mb-8 flex items-center justify-between border-b border-border/60" role="tablist" aria-label="בחירת מצב כניסה">
                       <Button
