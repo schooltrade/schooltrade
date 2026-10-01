@@ -1,3 +1,4 @@
+import { LinkifiedText } from "@/components/LinkifiedText";
 import { useState, useEffect, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -389,7 +390,7 @@ const PostsList = ({ userCode, userName, isAdmin }: PostsListProps) => {
         </Button>
         <div className="mr-auto hidden items-center gap-2 text-xs text-muted-foreground sm:flex">
           <ArrowUpDown className="h-3.5 w-3.5" aria-hidden="true" />
-          {sortMode === "newest" ? "חדש ביותר" : sortMode === "price_asc" ? "מחיר עולה" : sortMode === "price_desc" ? "מחיר יורד" : "מכירה פומבית"}
+          {sortMode === "newest" ? "חדש ביותר" : sortMode === "price_asc" ? "מחיר עולה" : "מחיר יורד"}
         </div>
       </div>
 
@@ -413,7 +414,6 @@ const PostsList = ({ userCode, userName, isAdmin }: PostsListProps) => {
             { key: "newest", label: "🕐 חדש ביותר" },
             { key: "price_asc", label: "💰 מחיר עולה" },
             { key: "price_desc", label: "💰 מחיר יורד" },
-            { key: "auction", label: "🔨 מכירה פומבית" },
           ] as const).map(opt => (
             <Button
               key={opt.key}
@@ -439,11 +439,6 @@ const PostsList = ({ userCode, userName, isAdmin }: PostsListProps) => {
           <div className="relative aspect-[4/3] overflow-hidden bg-muted">
             <img src={post.photo_url} alt={post.description} loading="lazy" className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.03]" />
             <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-card/90 to-transparent" aria-hidden="true" />
-            {post.posting_mode === "auction" && (
-              <span className="absolute right-3 top-3 flex items-center gap-1.5 rounded-full border border-primary/25 bg-card/80 px-2.5 py-1 text-xs font-medium text-primary shadow-soft backdrop-blur-md">
-                <Gavel className="h-3.5 w-3.5" aria-hidden="true" /> סחירת פלומביט
-              </span>
-            )}
           </div>
 
           {/* Content */}
@@ -497,7 +492,7 @@ const PostsList = ({ userCode, userName, isAdmin }: PostsListProps) => {
             </div>
 
             {/* Description */}
-            <p className="min-h-12 text-sm leading-6 text-foreground">{post.description}</p>
+            <p className="min-h-12 text-sm leading-6 text-foreground"><LinkifiedText text={post.description} /></p>
 
             {/* Comments */}
             {comments[post.id] && comments[post.id].length > 0 && (
@@ -518,7 +513,7 @@ const PostsList = ({ userCode, userName, isAdmin }: PostsListProps) => {
                             <PremiumBadge userCode={comment.user_code} />
                             <VerifiedBadge userCode={comment.user_code} />
                           </div>
-                          <p className="text-muted-foreground">{comment.content}</p>
+                          <p className="break-words text-muted-foreground"><LinkifiedText text={comment.content} /></p>
                         </div>
                         {canDeleteComment(comment) && (
                           <Button
@@ -537,35 +532,6 @@ const PostsList = ({ userCode, userName, isAdmin }: PostsListProps) => {
               </div>
             )}
 
-            {/* Auction Bidding */}
-            {post.posting_mode === "auction" && post.auction_active && userCode && (
-              <div className="border-t pt-4 space-y-2">
-                <Label className="text-sm font-semibold">הצע מחיר (בעילום שם)</Label>
-                <div className="flex gap-2">
-                  <Input
-                    type="number"
-                    value={bidAmounts[post.id] || ""}
-                    onChange={(e) =>
-                      setBidAmounts((prev) => ({ ...prev, [post.id]: e.target.value }))
-                    }
-                    placeholder="סכום להוספה..."
-                    min="1"
-                    max={post.max_bid_limit! - (post.current_bid_price || 0)}
-                    className="h-11 rounded-xl bg-background/45"
-                  />
-                  <Button
-                    size="sm" className="h-11 rounded-xl"
-                    onClick={() => handlePlaceBid(post.id, post)}
-                    disabled={!bidAmounts[post.id]}
-                  >
-                    הצע
-                  </Button>
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  מקסימום: {post.max_bid_limit}₪ | נותרו: {post.max_bid_limit! - (post.current_bid_price || 0)}₪
-                </p>
-              </div>
-            )}
 
             {/* Add Comment */}
             {userCode ? (

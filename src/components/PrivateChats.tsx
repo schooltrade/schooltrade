@@ -1,3 +1,4 @@
+import { LinkifiedText } from "@/components/LinkifiedText";
 import { useState, useEffect, useCallback, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -712,7 +713,7 @@ export const PrivateChats = ({ userCode, userName }: PrivateChatsProps) => {
                         </AnimatedUsername>
                         <PremiumBadge userCode={msg.sender_code} />
                       </div>
-                      <p className="break-words">{msg.content}</p>
+                      <p className="break-words"><LinkifiedText text={msg.content} /></p>
                       <div className="text-xs opacity-50 mt-1 flex items-center gap-1">
                         {new Date(msg.created_at).toLocaleTimeString('he-IL', { 
                           hour: '2-digit', 
