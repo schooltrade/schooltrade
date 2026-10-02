@@ -270,7 +270,7 @@ export const DailyStreak = ({ userCode }: Props) => {
       `}</style>
 
       <div
-        className="fixed top-3 left-3 z-[60] select-none"
+        className="select-none"
         style={{ animation: "ds-slideIn 0.5s cubic-bezier(0.22,1,0.36,1)" }}
         dir="ltr"
       >
