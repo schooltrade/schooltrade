@@ -202,7 +202,7 @@ const Index = () => {
       onClick={() => switchView(v)}
       data-tour={`nav-${v}`}
       onMouseEnter={() => playSound("hover")}
-      className={`flex-1 min-w-[140px] transition-all duration-300 ${view === v ? "scale-[1.02] shadow-md" : "hover:scale-[1.01]"} ${className}`}
+      className={`min-w-0 w-full whitespace-normal h-auto min-h-10 px-2 py-2 text-center transition-all duration-300 ${view === v ? "scale-[1.02] shadow-md" : "hover:scale-[1.01]"} ${className}`}
     >
       {label}
     </Button>
