@@ -202,7 +202,7 @@ const Index = () => {
       onClick={() => switchView(v)}
       data-tour={`nav-${v}`}
       onMouseEnter={() => playSound("hover")}
-      className={`flex-1 min-w-[140px] transition-all duration-300 ${view === v ? "scale-[1.02] shadow-md" : "hover:scale-[1.01]"} ${className}`}
+      className={`min-w-0 w-full whitespace-normal h-auto min-h-10 px-2 py-2 text-center transition-all duration-300 ${view === v ? "scale-[1.02] shadow-md" : "hover:scale-[1.01]"} ${className}`}
     >
       {label}
     </Button>
@@ -211,11 +211,10 @@ const Index = () => {
   return (
     <div
       dir="rtl"
-      className={`min-h-screen transition-all duration-1000 ${getBackgroundClass()} ${mounted ? "opacity-100" : "opacity-0"}`}
+      className={`min-h-[100dvh] w-full max-w-full overflow-x-clip transition-all duration-1000 ${getBackgroundClass()} ${mounted ? "opacity-100" : "opacity-0"}`}
       style={{ transition: "opacity 0.5s ease, background 1s ease" }}
     >
       <OnboardingTour open={tourOpen} onClose={() => setTourOpen(false)} />
-      {user && <DailyStreak userCode={user.code} />}
       {isHalloweenActive && <HalloweenDecorations />}
       {(isChristmasActive || isChristmasBackgroundOnly) && <ChristmasDecorations />}
       {isChristmasActive && <ChristmasCountdown />}
@@ -229,8 +228,8 @@ const Index = () => {
               : 'bg-card/70'
         }`}
       >
-        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
+        <div className="container mx-auto flex min-w-0 flex-wrap items-center justify-between gap-x-3 gap-y-2 px-4 py-3 sm:py-4">
+          <div className="flex min-w-0 items-center gap-3">
             <img
               src={logoImage}
               alt="Schooltrade"
@@ -240,13 +239,13 @@ const Index = () => {
               Schooltrade
             </h1>
           </div>
-          <div className="flex items-center gap-2 sm:gap-4">
+          <div className="flex min-w-0 flex-wrap items-center justify-end gap-2 sm:gap-4 max-sm:w-full max-sm:justify-between">
           <Button variant="outline" size="sm" data-tour="help-button" onClick={() => setTourOpen(true)} className="gap-1.5 rounded-full border-primary/30 hover:border-primary/60">
             <HelpCircle className="h-4 w-4" aria-hidden="true" /> הדרכה
           </Button>
           {user && (
-            <div className="flex items-center gap-4">
-              <span className="text-sm text-muted-foreground flex items-center gap-1.5">
+            <div className="flex min-w-0 items-center gap-2 sm:gap-4">
+              <span className="text-sm text-muted-foreground flex min-w-0 items-center gap-1.5">
                 שלום, <AnimatedUsername userCode={user.code}><strong>{user.name}</strong></AnimatedUsername>
                 <PremiumBadge userCode={user.code} />
                 <VerifiedBadge userCode={user.code} />
@@ -257,10 +256,11 @@ const Index = () => {
             </div>
           )}
           </div>
+          {user && <div className="flex shrink-0 items-center max-sm:order-3 max-sm:w-full max-sm:justify-start sm:ml-0 lg:ml-auto"><DailyStreak userCode={user.code} /></div>}
         </div>
       </header>
 
-      <main className={`container mx-auto px-4 py-8 ${isChristmasActive ? 'mt-10' : ''}`}>
+      <main className={`container mx-auto min-w-0 max-w-full px-4 py-8 ${isChristmasActive ? 'mt-10' : ''}`}>
         {!user ? (
           !schoolVerified ? (
             <div data-tour="school-gate"><SchoolCodeGate onVerified={() => setSchoolVerified(true)} /></div>
@@ -356,10 +356,10 @@ const Index = () => {
             </div>
           )
         ) : (
-          <div className="space-y-6">
+          <div className="min-w-0 space-y-6">
             {/* Navigation */}
             <div
-              className="flex gap-3 flex-wrap"
+              className="grid min-w-0 grid-cols-2 gap-3 sm:grid-cols-[repeat(auto-fit,minmax(140px,1fr))]"
               style={{ animation: "fadeSlideIn 0.4s ease-out" }}
             >
               <NavBtn v="posts" label="📚 המודעות שלי" />
@@ -391,7 +391,7 @@ const Index = () => {
                     localStorage.setItem(`limited-chat-read-${user.code}`, new Date().toISOString());
                   }}
                   onMouseEnter={() => playSound("hover")}
-                  className={`flex-1 min-w-[140px] relative px-4 py-2 rounded-md border-2 text-sm font-medium transition-all duration-300 ${
+                  className={`relative min-w-0 px-4 py-2 rounded-md border-2 text-sm font-medium transition-all duration-300 ${
                     view === "limitedChat"
                       ? "bg-primary text-primary-foreground border-primary scale-[1.02] shadow-md"
                       : "bg-card border-blue-500/30 hover:border-blue-400/60 hover:scale-[1.01]"
@@ -410,6 +410,7 @@ const Index = () => {
 
             <div
               key={view}
+              className="min-w-0 max-w-full"
               style={{ animation: "fadeSlideIn 0.35s ease-out" }}
             >
               {view === "posts" && <PostsList userCode={user.code} userName={user.name} isAdmin={isAdmin} />}
