@@ -147,6 +147,39 @@ export type Database = {
         }
         Relationships: []
       }
+      equipped_skins: {
+        Row: {
+          updated_at: string
+          user_code: string
+          user_skin_id: string
+        }
+        Insert: {
+          updated_at?: string
+          user_code: string
+          user_skin_id: string
+        }
+        Update: {
+          updated_at?: string
+          user_code?: string
+          user_skin_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "equipped_skins_user_code_fkey"
+            columns: ["user_code"]
+            isOneToOne: true
+            referencedRelation: "users"
+            referencedColumns: ["code"]
+          },
+          {
+            foreignKeyName: "equipped_skins_user_skin_id_fkey"
+            columns: ["user_skin_id"]
+            isOneToOne: false
+            referencedRelation: "user_skins"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       game_scores: {
         Row: {
           created_at: string
@@ -400,6 +433,30 @@ export type Database = {
         }
         Relationships: []
       }
+      school_codes: {
+        Row: {
+          code_hash: string
+          code_salt: string
+          created_at: string
+          id: string
+          school_name: string
+        }
+        Insert: {
+          code_hash: string
+          code_salt: string
+          created_at?: string
+          id?: string
+          school_name: string
+        }
+        Update: {
+          code_hash?: string
+          code_salt?: string
+          created_at?: string
+          id?: string
+          school_name?: string
+        }
+        Relationships: []
+      }
       school_news: {
         Row: {
           author_code: string
@@ -457,6 +514,98 @@ export type Database = {
           severity?: string
           user_agent?: string | null
           user_code?: string | null
+        }
+        Relationships: []
+      }
+      skin_offers: {
+        Row: {
+          comment: string
+          created_at: string
+          id: string
+          price: number
+          seller_code: string
+          status: string
+          updated_at: string
+          user_skin_id: string
+        }
+        Insert: {
+          comment?: string
+          created_at?: string
+          id?: string
+          price: number
+          seller_code: string
+          status?: string
+          updated_at?: string
+          user_skin_id: string
+        }
+        Update: {
+          comment?: string
+          created_at?: string
+          id?: string
+          price?: number
+          seller_code?: string
+          status?: string
+          updated_at?: string
+          user_skin_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "skin_offers_user_skin_id_fkey"
+            columns: ["user_skin_id"]
+            isOneToOne: false
+            referencedRelation: "user_skins"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      skin_transactions: {
+        Row: {
+          buyer_code: string
+          created_at: string
+          id: string
+          offer_id: string | null
+          price: number
+          seller_code: string | null
+          skin_id: number
+        }
+        Insert: {
+          buyer_code: string
+          created_at?: string
+          id?: string
+          offer_id?: string | null
+          price: number
+          seller_code?: string | null
+          skin_id: number
+        }
+        Update: {
+          buyer_code?: string
+          created_at?: string
+          id?: string
+          offer_id?: string | null
+          price?: number
+          seller_code?: string | null
+          skin_id?: number
+        }
+        Relationships: []
+      }
+      skins: {
+        Row: {
+          id: number
+          name: string
+          price: number
+          tier: number
+        }
+        Insert: {
+          id: number
+          name: string
+          price: number
+          tier: number
+        }
+        Update: {
+          id?: number
+          name?: string
+          price?: number
+          tier?: number
         }
         Relationships: []
       }
@@ -554,6 +703,42 @@ export type Database = {
           },
         ]
       }
+      user_skins: {
+        Row: {
+          acquired_at: string
+          id: string
+          owner_code: string
+          skin_id: number
+        }
+        Insert: {
+          acquired_at?: string
+          id?: string
+          owner_code: string
+          skin_id: number
+        }
+        Update: {
+          acquired_at?: string
+          id?: string
+          owner_code?: string
+          skin_id?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_skins_owner_code_fkey"
+            columns: ["owner_code"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["code"]
+          },
+          {
+            foreignKeyName: "user_skins_skin_id_fkey"
+            columns: ["skin_id"]
+            isOneToOne: false
+            referencedRelation: "skins"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_streaks: {
         Row: {
           created_at: string
@@ -633,6 +818,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      _shop_debit: {
+        Args: { _amount: number; _code: string }
+        Returns: undefined
+      }
       check_rate_limit: {
         Args: {
           _action_type: string
@@ -651,6 +840,70 @@ export type Database = {
         Returns: boolean
       }
       reset_monthly_photo_counts: { Args: never; Returns: undefined }
+      shop_balance: { Args: { _user_code: string }; Returns: number }
+      shop_buy_catalog: {
+        Args: { _skin_id: number; _user_code: string }
+        Returns: undefined
+      }
+      shop_buy_offer: {
+        Args: { _offer_id: string; _user_code: string }
+        Returns: undefined
+      }
+      shop_cancel_offer: {
+        Args: { _offer_id: string; _user_code: string }
+        Returns: undefined
+      }
+      shop_create_offer: {
+        Args: {
+          _comment: string
+          _price: number
+          _user_code: string
+          _user_skin_id: string
+        }
+        Returns: undefined
+      }
+      shop_equip: {
+        Args: { _user_code: string; _user_skin_id: string }
+        Returns: undefined
+      }
+      shop_equipped_skin: { Args: { _user_code: string }; Returns: number }
+      shop_my_skins: {
+        Args: { _user_code: string }
+        Returns: {
+          balance: number
+          equipped: boolean
+          on_sale: boolean
+          skin_id: number
+          user_skin_id: string
+        }[]
+      }
+      shop_offers: {
+        Args: { _user_code: string }
+        Returns: {
+          comment: string
+          created_at: string
+          is_mine: boolean
+          offer_id: string
+          price: number
+          seller_name: string
+          skin_id: number
+        }[]
+      }
+      shop_user_skins: {
+        Args: { _user_id: string }
+        Returns: {
+          skin_id: number
+        }[]
+      }
+      shop_users: {
+        Args: never
+        Returns: {
+          equipped_skin_id: number
+          skin_count: number
+          user_id: string
+          user_name: string
+        }[]
+      }
       streak_check_in: {
         Args: { _user_code: string }
         Returns: {
@@ -671,6 +924,7 @@ export type Database = {
           server_date: string
         }[]
       }
+      verify_school_code: { Args: { _code: string }; Returns: boolean }
     }
     Enums: {
       app_role: "admin" | "moderator" | "user"

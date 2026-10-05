@@ -5,14 +5,7 @@ import { Label } from "@/components/ui/label";
 import { ArrowLeft, LockKeyhole, ShieldCheck } from "lucide-react";
 import schoolAccessCard from "@/assets/school-access-card.png";
 
-interface School {
-  name: string;
-  code: string;
-}
-
-const SCHOOLS: School[] = [
-  { name: "רמות וויצמן", code: "367927369" },
-];
+import { supabase } from "@/integrations/supabase/client";
 
 interface SchoolCodeGateProps {
   onVerified: () => void;
@@ -23,7 +16,9 @@ export const SchoolCodeGate = ({ onVerified }: SchoolCodeGateProps) => {
   const [error, setError] = useState("");
   const [shaking, setShaking] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const [checking, setChecking] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const trimmed = code.trim();
 
@@ -33,7 +28,16 @@ export const SchoolCodeGate = ({ onVerified }: SchoolCodeGateProps) => {
       return;
     }
 
-    const found = SCHOOLS.find(s => s.code === trimmed);
+    if (checking) return;
+    setChecking(true);
+    // Verification happens on the server; the real code never reaches the browser.
+    const { data: found, error: rpcError } = await supabase.rpc("verify_school_code", { _code: trimmed });
+    setChecking(false);
+    if (rpcError) {
+      setError("שגיאת חיבור. נסה שוב.");
+      triggerShake();
+      return;
+    }
     if (!found) {
       setError("קוד בית הספר שגוי. נסה שוב.");
       triggerShake();
@@ -42,7 +46,6 @@ export const SchoolCodeGate = ({ onVerified }: SchoolCodeGateProps) => {
 
     setError("");
     sessionStorage.setItem("schoolVerified", "true");
-    sessionStorage.setItem("schoolCode", trimmed);
     onVerified();
   };
 
@@ -138,7 +141,7 @@ export const SchoolCodeGate = ({ onVerified }: SchoolCodeGateProps) => {
                   )}
                 </div>
 
-                <Button type="submit" className="h-12 w-full rounded-xl bg-gradient-to-l from-primary to-accent text-base shadow-glow sm:h-14" disabled={code.length !== 9}>
+                <Button type="submit" className="h-12 w-full rounded-xl bg-gradient-to-l from-primary to-accent text-base shadow-glow sm:h-14" disabled={code.length !== 9 || checking}>
                   אמת קוד בית ספר
                   <ArrowLeft className="mr-auto h-4 w-4" aria-hidden="true" />
                 </Button>
