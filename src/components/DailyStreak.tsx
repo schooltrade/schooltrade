@@ -169,6 +169,7 @@ const Particles = ({ kind }: { kind: "fire" | "ice" | null }) => {
 export const DailyStreak = ({ userCode }: Props) => {
   const [data, setData] = useState<StreakData | null>(null);
   const [bump, setBump] = useState(false);
+  const [dayShift, setDayShift] = useState(false);
   const animated = useAnimatedNumber(data?.current_streak ?? 0);
   const lastNotifiedKey = `ds-notified-${userCode}`;
 
@@ -192,6 +193,14 @@ export const DailyStreak = ({ userCode }: Props) => {
       setData(row as StreakData);
       // Notifications (throttle once per day)
       const today = (row as StreakData).server_date;
+      // New-day transition animation (visual only, once per day)
+      const dayKey = `ds-lastday-${userCode}`;
+      const lastDay = localStorage.getItem(dayKey);
+      if (lastDay && lastDay !== today) {
+        setTimeout(() => setDayShift(true), 400);
+        setTimeout(() => setDayShift(false), 2400);
+      }
+      localStorage.setItem(dayKey, today);
       const lastNotified = localStorage.getItem(lastNotifiedKey);
       const shouldNotify = lastNotified !== today;
 
@@ -263,6 +272,27 @@ export const DailyStreak = ({ userCode }: Props) => {
           40% { transform: scale(1.18); }
           100% { transform: scale(1); }
         }
+        @keyframes ds-yesterday {
+          0% { opacity: 0.9; transform: scale(1); filter: grayscale(0.7) brightness(0.7); }
+          45% { opacity: 0.6; transform: scale(0.6) translateY(2px); filter: grayscale(1) brightness(0.5); }
+          100% { opacity: 0; transform: scale(0.3) translateY(4px); }
+        }
+        @keyframes ds-today {
+          0%, 35% { opacity: 0; transform: scale(0.2) translateY(6px); }
+          65% { opacity: 1; transform: scale(1.35) translateY(-2px); }
+          82% { transform: scale(0.92); }
+          100% { opacity: 1; transform: scale(1); }
+        }
+        @keyframes ds-ring {
+          0%, 45% { opacity: 0; transform: scale(0.4); }
+          60% { opacity: 0.9; }
+          100% { opacity: 0; transform: scale(2.4); }
+        }
+        @keyframes ds-spark {
+          0%, 50% { opacity: 0; transform: rotate(var(--a)) translateY(0) scale(0.4); }
+          65% { opacity: 1; }
+          100% { opacity: 0; transform: rotate(var(--a)) translateY(-22px) scale(1); }
+        }
         @keyframes ds-slideIn {
           from { opacity: 0; transform: translateY(-8px) scale(0.95); }
           to { opacity: 1; transform: translateY(0) scale(1); }
@@ -285,7 +315,23 @@ export const DailyStreak = ({ userCode }: Props) => {
             <Particles
               kind={flameState === "active" || flameState === "warning" ? "fire" : flameState === "freezing" || flameState === "frozen" ? "ice" : null}
             />
-            <FlameIcon state={flameState} size={20} />
+            {dayShift ? (
+              <>
+                <span className="absolute inset-0 flex items-center justify-center" style={{ animation: "ds-yesterday 2s cubic-bezier(0.22,1,0.36,1) forwards" }}>
+                  <FlameIcon state={flameState} size={20} />
+                </span>
+                <span className="pointer-events-none absolute inset-0 rounded-full border-2 border-amber-300/80" style={{ animation: "ds-ring 2s ease-out forwards" }} />
+                {Array.from({ length: 8 }).map((_, i) => (
+                  <span key={i} className="pointer-events-none absolute left-1/2 top-1/2 -ml-[2px] -mt-[2px] h-1 w-1 rounded-full bg-amber-300"
+                    style={{ ["--a" as any]: `${i * 45}deg`, animation: "ds-spark 2s ease-out forwards" }} />
+                ))}
+                <span style={{ animation: "ds-today 2s cubic-bezier(0.22,1,0.36,1) forwards" }}>
+                  <FlameIcon state={flameState} size={20} />
+                </span>
+              </>
+            ) : (
+              <FlameIcon state={flameState} size={20} />
+            )}
           </div>
 
           {/* Streak number */}
