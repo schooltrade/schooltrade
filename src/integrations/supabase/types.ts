@@ -590,18 +590,24 @@ export type Database = {
       }
       skins: {
         Row: {
+          available_until: string | null
+          category: string
           id: number
           name: string
           price: number
           tier: number
         }
         Insert: {
+          available_until?: string | null
+          category?: string
           id: number
           name: string
           price: number
           tier: number
         }
         Update: {
+          available_until?: string | null
+          category?: string
           id?: number
           name?: string
           price?: number
@@ -839,8 +845,17 @@ export type Database = {
         }
         Returns: boolean
       }
+      keif_convert: {
+        Args: {
+          _amount: number
+          _converted: Json
+          _user_code: string
+          _user_name: string
+        }
+        Returns: string
+      }
       reset_monthly_photo_counts: { Args: never; Returns: undefined }
-      shop_balance: { Args: { _user_code: string }; Returns: number }
+      shop_balance: { Args: { _user_code: string }; Returns: string }
       shop_buy_catalog: {
         Args: { _skin_id: number; _user_code: string }
         Returns: undefined
@@ -884,11 +899,12 @@ export type Database = {
           created_at: string
           is_mine: boolean
           offer_id: string
-          price: number
+          price: string
           seller_name: string
           skin_id: number
         }[]
       }
+      shop_server_now: { Args: never; Returns: string }
       shop_user_skins: {
         Args: { _user_id: string }
         Returns: {
