@@ -27,7 +27,44 @@ const SHAPES = [
   "M50 6 L63 38 L94 50 L63 62 L50 94 L37 62 L6 50 L37 38 Z",
 ];
 
+// Halloween collection (ids 101-150): illustrated artwork with layered,
+// GPU-friendly CSS animations (transform/opacity only). Effects grow with tier.
+const HW_GLOW = ["24 95% 55%", "275 85% 62%", "140 80% 50%", "0 85% 55%", "190 90% 60%"];
+const HalloweenArt = ({ skinId, tier, size, animated }: { skinId: number; tier: number; size: number; animated: boolean }) => {
+  const idx = skinId - 101;
+  const glow = HW_GLOW[Math.floor(idx / 10)] ?? HW_GLOW[0];
+  const motion = ["hw-float", "hw-sway", "hw-breathe"][idx % 3];
+  const sparks = animated ? Math.min(2 + Math.floor(tier / 2), 7) : 0;
+  return (
+    <span className="hw-skin relative inline-block" style={{ width: size, height: size, ["--hw" as any]: glow }}>
+      {tier >= 3 && <span className={`absolute inset-[8%] rounded-full ${animated ? "hw-aura" : ""}`} style={{ background: `radial-gradient(circle, hsl(${glow} / ${0.18 + tier * 0.03}), transparent 70%)` }} />}
+      {tier >= 7 && animated && <span className="hw-ring absolute inset-[2%] rounded-full border border-dashed" style={{ borderColor: `hsl(${glow} / 0.45)` }} />}
+      <img
+        src={`${import.meta.env.BASE_URL}halloween-skins/${skinId}.webp`}
+        alt=""
+        width={size}
+        height={size}
+        loading="lazy"
+        decoding="async"
+        draggable={false}
+        className={`relative h-full w-full rounded-[22%] object-cover ${animated ? motion : ""}`}
+        style={{ mixBlendMode: "screen", animationDelay: `${(idx % 7) * -0.6}s` }}
+      />
+      {animated && <span className="hw-fog pointer-events-none absolute inset-x-[10%] bottom-[6%] h-[22%] rounded-full" style={{ background: `radial-gradient(ellipse, hsl(${glow} / 0.28), transparent 70%)` }} />}
+      {Array.from({ length: sparks }).map((_, i) => (
+        <span key={i} className="hw-spark pointer-events-none absolute rounded-full"
+          style={{ left: `${18 + ((i * 29 + idx * 13) % 64)}%`, bottom: "18%", width: 3, height: 3, background: `hsl(${glow})`, boxShadow: `0 0 6px hsl(${glow})`, animationDelay: `${i * 0.55 + (idx % 5) * 0.2}s`, animationDuration: `${2.4 + (i % 3) * 0.6}s` }} />
+      ))}
+    </span>
+  );
+};
+
 export const SkinArt = ({ skinId, tier, size = 96, animated = true }: { skinId: number; tier: number; size?: number; animated?: boolean }) => {
+  if (skinId > 100) return <HalloweenArt skinId={skinId} tier={tier} size={size} animated={animated} />;
+  return <VectorSkin skinId={skinId} tier={tier} size={size} animated={animated} />;
+};
+
+const VectorSkin = ({ skinId, tier, size, animated }: { skinId: number; tier: number; size: number; animated: boolean }) => {
   const uid = useId().replace(/:/g, "");
   const idx = (skinId - 1) % 10;
   const shape = SHAPES[(idx + tier * 3) % 10];
