@@ -6,13 +6,13 @@ import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { ChevronDown, Check, Sparkles } from "lucide-react";
 import { SkinArt } from "./SkinArt";
-import { TIERS, tierMeta, formatKeif, type SkinRow } from "@/lib/skins";
+import { TIERS, tierMeta, formatKeif, toBig, type SkinRow } from "@/lib/skins";
 import { playSound } from "@/lib/sounds";
 
 interface Props { userCode: string; userName: string }
-type Sub = "catalog" | "mine" | "users" | "offers";
-interface Mine { user_skin_id: string; skin_id: number; equipped: boolean; on_sale: boolean; balance: number }
-interface Offer { offer_id: string; skin_id: number; seller_name: string; price: number; comment: string; created_at: string; is_mine: boolean }
+type Sub = "catalog" | "halloween" | "mine" | "users" | "offers";
+interface Mine { user_skin_id: string; skin_id: number; equipped: boolean; on_sale: boolean }
+interface Offer { offer_id: string; skin_id: number; seller_name: string; price: string; comment: string; created_at: string; is_mine: boolean }
 interface ShopUser { user_id: string; user_name: string; skin_count: number; equipped_skin_id: number | null }
 
 const errMsg = (e: any) => (e?.message || "הפעולה נכשלה").replace(/^.*?:\s/, "");
@@ -45,7 +45,8 @@ export const ShopTab = ({ userCode }: Props) => {
   const [sub, setSub] = useState<Sub>("catalog");
   const [skins, setSkins] = useState<SkinRow[]>([]);
   const [mine, setMine] = useState<Mine[]>([]);
-  const [balance, setBalance] = useState(0);
+  const [balance, setBalance] = useState("0");
+  const [serverNow, setServerNow] = useState<number | null>(null);
   const [offers, setOffers] = useState<Offer[]>([]);
   const [users, setUsers] = useState<ShopUser[]>([]);
   const [openUser, setOpenUser] = useState<string | null>(null);
@@ -65,7 +66,7 @@ export const ShopTab = ({ userCode }: Props) => {
       supabase.rpc("shop_balance", { _user_code: userCode }),
     ]);
     setMine((data as Mine[]) || []);
-    setBalance(Number(bal) || 0);
+    setBalance(String(bal ?? "0"));
   }, [userCode]);
   const loadOffers = useCallback(async () => {
     const { data } = await supabase.rpc("shop_offers", { _user_code: userCode });
@@ -73,7 +74,8 @@ export const ShopTab = ({ userCode }: Props) => {
   }, [userCode]);
 
   useEffect(() => {
-    supabase.from("skins").select("id,name,tier,price").order("id").then(({ data }) => setSkins((data as SkinRow[]) || []));
+    supabase.rpc("shop_server_now").then(({ data }) => data && setServerNow(new Date(data as string).getTime()));
+    supabase.from("skins").select("id,name,tier,price:price::text,category,available_until").order("id").then(({ data }) => setSkins((data as SkinRow[]) || []));
     loadMine();
   }, [loadMine]);
   useEffect(() => {
@@ -107,17 +109,22 @@ export const ShopTab = ({ userCode }: Props) => {
   };
 
   const createOffer = async () => {
-    const price = Number(sellPrice.replace(/[^\d]/g, ""));
+    const price = sellPrice.replace(/[^\d]/g, "").replace(/^0+/, "");
     if (!sellId) return toast.error("בחר סקין למכירה");
-    if (!price || price <= 0) return toast.error("הזן מחיר תקין");
-    const ok = await run("sell", () => supabase.rpc("shop_create_offer", { _user_code: userCode, _user_skin_id: sellId, _price: price, _comment: sellComment.trim().slice(0, 300) }), "ההצעה פורסמה");
+    if (!price || toBig(price) <= 0n) return toast.error("הזן מחיר תקין");
+    const ok = await run("sell", () => supabase.rpc("shop_create_offer", { _user_code: userCode, _user_skin_id: sellId, _price: price as any, _comment: sellComment.trim().slice(0, 300) }), "ההצעה פורסמה");
     if (ok) { setSellId(""); setSellPrice(""); setSellComment(""); loadOffers(); }
   };
 
   const tabs: { k: Sub; l: string }[] = [
-    { k: "catalog", l: "קטלוג" }, { k: "mine", l: "הסקינים שלי" }, { k: "users", l: "משתמשים" }, { k: "offers", l: "הצעות" },
+    { k: "catalog", l: "קטלוג" }, { k: "halloween", l: "🎃 האלווין" }, { k: "mine", l: "הסקינים שלי" }, { k: "users", l: "משתמשים" }, { k: "offers", l: "הצעות" },
   ];
-  const visible = tierFilter ? skins.filter((s) => s.tier === tierFilter) : skins;
+  const standard = skins.filter((s) => (s.category ?? "standard") === "standard");
+  const visible = tierFilter ? standard.filter((s) => s.tier === tierFilter) : standard;
+  const halloween = skins.filter((s) => s.category === "halloween");
+  const hwUntil = halloween[0]?.available_until ? new Date(halloween[0].available_until).getTime() : null;
+  const hwOpen = hwUntil == null || serverNow == null ? true : serverNow < hwUntil;
+  const hwDaysLeft = hwUntil && serverNow ? Math.max(0, Math.ceil((hwUntil - serverNow) / 86400000)) : null;
   const sellable = mine.filter((m) => !m.on_sale);
 
   return (
@@ -128,14 +135,14 @@ export const ShopTab = ({ userCode }: Props) => {
           <div className="min-w-0">
             <p className="flex items-center gap-1.5 text-xs font-medium text-primary"><Sparkles className="h-3.5 w-3.5" /> חנות Schooltrade</p>
             <h2 className="mt-1 text-2xl font-semibold sm:text-3xl">חנות</h2>
-            <p className="mt-1 text-sm text-muted-foreground">100 סקינים, 10 דרגות נדירות. הגדר סקין כאווטאר שלך.</p>
+            <p className="mt-1 text-sm text-muted-foreground">100 סקינים, 10 דרגות נדירות, וקולקציית האלווין מוגבלת. הגדר סקין כאווטאר שלך.</p>
           </div>
           <div className="rounded-2xl border border-border/60 bg-background/50 px-4 py-2.5 text-left">
             <p className="text-[11px] text-muted-foreground">היתרה שלך</p>
             <p className="text-lg font-semibold tabular-nums">🪙 {formatKeif(balance)}</p>
           </div>
         </div>
-        <div className="mt-5 grid grid-cols-2 gap-1 rounded-xl bg-muted/60 p-1 sm:grid-cols-4">
+        <div className="mt-5 grid grid-cols-2 gap-1 rounded-xl bg-muted/60 p-1 sm:grid-cols-5">
           {tabs.map((t) => (
             <button key={t.k} onClick={() => { playSound("tab"); setSub(t.k); }}
               className={`min-w-0 rounded-lg px-3 py-2 text-sm font-medium transition-all duration-300 ${sub === t.k ? "bg-background text-foreground shadow-md" : "text-muted-foreground hover:text-foreground"}`}>
@@ -166,6 +173,40 @@ export const ShopTab = ({ userCode }: Props) => {
                       {owned ? "בבעלותך" : busy === `b${s.id}` ? "רוכש..." : "קנה"}
                     </Button>
                   </SkinCard>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {sub === "halloween" && (
+          <div className="space-y-4">
+            <div className="relative overflow-hidden rounded-2xl border border-primary/30 bg-card/60 p-4 sm:p-5">
+              <div className="pointer-events-none absolute -left-10 -top-10 h-40 w-40 rounded-full bg-primary/15 blur-3xl" />
+              <div className="relative flex flex-wrap items-center justify-between gap-3">
+                <div className="min-w-0">
+                  <p className="text-base font-semibold">קולקציית האלווין · מהדורה מוגבלת</p>
+                  <p className="mt-0.5 text-xs text-muted-foreground">50 סקינים מונפשים. סקינים שנרכשו נשארים בבעלותך לתמיד.</p>
+                </div>
+                <span className={`rounded-full border px-3 py-1 text-xs ${hwOpen ? "border-primary/40 text-primary" : "border-border text-muted-foreground"}`}>
+                  {hwOpen ? (hwDaysLeft != null ? `זמין עוד ${hwDaysLeft} ימים · עד 1.1.2027` : "זמין עד 1.1.2027") : "הקולקציה הסתיימה"}
+                </span>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-[repeat(auto-fill,minmax(170px,1fr))]">
+              {halloween.map((s) => {
+                const owned = ownedIds.has(s.id);
+                return (
+                  <div key={s.id} style={{ contentVisibility: "auto", containIntrinsicSize: "0 230px" }}>
+                    <SkinCard skin={s} owned={owned}>
+                      <p className="mt-1 text-xs tabular-nums text-muted-foreground">🪙 {formatKeif(s.price)}</p>
+                      <Button size="sm" className="mt-2 h-9 w-full rounded-xl" variant={owned || !hwOpen ? "outline" : "default"}
+                        disabled={owned || !hwOpen || busy === `b${s.id}`}
+                        onClick={() => run(`b${s.id}`, () => supabase.rpc("shop_buy_catalog", { _user_code: userCode, _skin_id: s.id }), `רכשת את ${s.name}`)}>
+                        {owned ? "בבעלותך" : !hwOpen ? "לא זמין" : busy === `b${s.id}` ? "רוכש..." : "קנה"}
+                      </Button>
+                    </SkinCard>
+                  </div>
                 );
               })}
             </div>

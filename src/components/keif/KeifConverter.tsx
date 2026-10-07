@@ -1,3 +1,4 @@
+import { formatKeifExact } from "@/lib/skins";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -75,6 +76,7 @@ export const KeifConverter = ({ userCode, userName }: KeifConverterProps) => {
   const [keifBalance, setKeifBalance] = useState<KeifBalance | null>(null);
   const [converting, setConverting] = useState(false);
   const [displayKeif, setDisplayKeif] = useState(0);
+  const [exactKeif, setExactKeif] = useState("0");
   const [animating, setAnimating] = useState(false);
   const { toast } = useToast();
 
@@ -85,11 +87,12 @@ export const KeifConverter = ({ userCode, userName }: KeifConverterProps) => {
   const loadKeifBalance = async () => {
     const { data } = await supabase
       .from("keif_balances")
-      .select("*")
+      .select("*, total_keif_text:total_keif::text")
       .eq("user_code", userCode)
       .maybeSingle();
     setKeifBalance(data as KeifBalance | null);
-    setDisplayKeif(data?.total_keif || 0);
+    setDisplayKeif(Number(data?.total_keif) || 0);
+    setExactKeif(String((data as any)?.total_keif_text ?? "0").split(".")[0]);
   };
 
   const getConvertibleAmount = (key: string): number => {
@@ -133,37 +136,16 @@ export const KeifConverter = ({ userCode, userName }: KeifConverterProps) => {
       newConverted[game.field] = current;
     }
 
-    const newTotal = (keifBalance?.total_keif || 0) + totalConvertible;
-
     try {
-      // Re-fetch latest balance to avoid stale duplicates and ensure single record per user
-      const { data: latest } = await supabase
-        .from("keif_balances")
-        .select("*")
-        .eq("user_code", userCode)
-        .maybeSingle();
-
-      const baseConverted = {
-        converted_math: latest?.converted_math ?? 0,
-        converted_hebrew: latest?.converted_hebrew ?? 0,
-        converted_english: latest?.converted_english ?? 0,
-        converted_crypto: latest?.converted_crypto ?? 0,
-        converted_arcade: (latest as any)?.converted_arcade ?? 0,
-      };
-
-      const upsertData: any = {
-        user_code: userCode,
-        user_name: userName,
-        total_keif: newTotal,
-        ...baseConverted,
-        ...newConverted,
-        updated_at: new Date().toISOString(),
-      };
-
-      const { error } = await supabase
-        .from("keif_balances")
-        .upsert(upsertData, { onConflict: "user_code" });
+      // Exact addition happens on the server (high-precision numbers, no upper limit)
+      const { data: totalText, error } = await supabase.rpc("keif_convert", {
+        _user_code: userCode,
+        _user_name: userName,
+        _amount: String(Math.max(0, Math.floor(totalConvertible))),
+        _converted: newConverted,
+      } as any);
       if (error) throw error;
+      const newTotal = Number(totalText) || 0;
 
       // Animate counter
       setAnimating(true);
@@ -202,7 +184,7 @@ export const KeifConverter = ({ userCode, userName }: KeifConverterProps) => {
           <div className="text-6xl mb-2">🪙</div>
           <div className={`text-5xl font-bold text-primary transition-all duration-300 ${animating ? "scale-110" : "scale-100"}`}
             style={{ textShadow: animating ? "0 0 30px hsl(var(--primary) / 0.6)" : "none" }}>
-            {displayKeif.toLocaleString()}
+            {animating ? displayKeif.toLocaleString() : formatKeifExact(exactKeif)}
           </div>
           <div className="text-muted-foreground text-lg mt-1">קיף</div>
         </CardContent>

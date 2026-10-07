@@ -1,3 +1,4 @@
+import { formatKeifExact } from "@/lib/skins";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
@@ -7,7 +8,7 @@ interface LeaderboardEntry {
   id: string;
   user_code: string;
   user_name: string;
-  total_keif: number;
+  total_keif: string;
 }
 
 interface KeifLeaderboardProps {
@@ -27,7 +28,7 @@ export const KeifLeaderboard = ({ userCode }: KeifLeaderboardProps) => {
   const fetchLeaderboard = async () => {
     const { data } = await supabase
       .from("keif_balances")
-      .select("id, user_code, user_name, total_keif")
+      .select("id, user_code, user_name, total_keif:total_keif::text")
       .order("total_keif", { ascending: false })
       .limit(50);
     setEntries((data as LeaderboardEntry[]) || []);
@@ -113,7 +114,7 @@ export const KeifLeaderboard = ({ userCode }: KeifLeaderboardProps) => {
                     </div>
                     <div className="text-left shrink-0">
                       <div className="font-bold text-primary text-lg">
-                        {Math.floor(entry.total_keif).toLocaleString()}
+                        {formatKeifExact(entry.total_keif)}
                       </div>
                       <div className="text-xs text-muted-foreground">🪙 קיף</div>
                     </div>

@@ -601,3 +601,23 @@ All colors MUST be HSL.
     box-shadow: 0 14px 30px rgba(0,0,0,0.3);
   }
 }
+
+/* Halloween skins: transform/opacity-only animations, paused off-screen via content-visibility */
+.hw-skin { contain: layout paint; }
+@keyframes hw-float { 0%,100% { transform: translateY(0) } 50% { transform: translateY(-4%) } }
+@keyframes hw-sway { 0%,100% { transform: rotate(-2.5deg) } 50% { transform: rotate(2.5deg) } }
+@keyframes hw-breathe { 0%,100% { transform: scale(1) } 50% { transform: scale(1.04) } }
+@keyframes hw-aura { 0%,100% { opacity: .55; transform: scale(.94) } 50% { opacity: 1; transform: scale(1.06) } }
+@keyframes hw-ring { to { transform: rotate(360deg) } }
+@keyframes hw-fog { 0%,100% { opacity: .5; transform: translateX(-6%) } 50% { opacity: .9; transform: translateX(6%) } }
+@keyframes hw-spark { 0% { opacity: 0; transform: translateY(0) scale(.6) } 25% { opacity: 1 } 100% { opacity: 0; transform: translateY(-260%) scale(1) } }
+.hw-float { animation: hw-float 3.6s ease-in-out infinite; }
+.hw-sway { animation: hw-sway 4.2s ease-in-out infinite; transform-origin: 50% 85%; }
+.hw-breathe { animation: hw-breathe 3.2s ease-in-out infinite; }
+.hw-aura { animation: hw-aura 3s ease-in-out infinite; }
+.hw-ring { animation: hw-ring 18s linear infinite; }
+.hw-fog { animation: hw-fog 6s ease-in-out infinite; }
+.hw-spark { animation: hw-spark 2.8s ease-out infinite; opacity: 0; }
+@media (prefers-reduced-motion: reduce) {
+  .hw-float, .hw-sway, .hw-breathe, .hw-aura, .hw-ring, .hw-fog, .hw-spark { animation: none; }
+}

@@ -24,23 +24,43 @@ export interface SkinRow {
   id: number;
   name: string;
   tier: number;
-  price: number;
+  price: string; // exact integer string from the database
+  category?: string;
+  available_until?: string | null;
 }
 
-const UNITS: [number, string][] = [
-  [1e24, "ספטיליון"],
-  [1e21, "סקסטיליון"],
-  [1e18, "קווינטיליון"],
-  [1e15, "קוודריליון"],
-  [1e12, "טריליון"],
-  [1e9, "מיליארד"],
-  [1e6, "מיליון"],
+// Exact big-integer helpers (no floating point for Keif amounts)
+export const toBig = (v: string | number | null | undefined): bigint => {
+  try {
+    const t = String(v ?? "0").split(".")[0].replace(/[^\d-]/g, "");
+    return t && t !== "-" ? BigInt(t) : 0n;
+  } catch { return 0n; }
+};
+
+/** Full exact number with thousands separators */
+export const formatKeifExact = (v: string | number | null | undefined) =>
+  toBig(v).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+
+const UNITS: [bigint, string][] = [
+  [10n ** 24n, "ספטיליון"],
+  [10n ** 21n, "סקסטיליון"],
+  [10n ** 18n, "קווינטיליון"],
+  [10n ** 15n, "קוודריליון"],
+  [10n ** 12n, "טריליון"],
+  [10n ** 9n, "מיליארד"],
+  [10n ** 6n, "מיליון"],
 ];
 
-export const formatKeif = (n: number) => {
-  const v = Number(n) || 0;
+/** Compact display, e.g. "4 ספטיליון" — computed with bigint, exact to 2 decimals */
+export const formatKeif = (v: string | number | null | undefined) => {
+  const n = toBig(v);
   for (const [u, label] of UNITS) {
-    if (v >= u) return `${(v / u).toLocaleString("he-IL", { maximumFractionDigits: 2 })} ${label}`;
+    if (n >= u) {
+      const whole = n / u;
+      const frac = ((n % u) * 100n) / u;
+      const f = frac === 0n ? "" : "." + frac.toString().padStart(2, "0").replace(/0$/, "");
+      return `${formatKeifExact(whole.toString())}${f} ${label}`;
+    }
   }
-  return Math.floor(v).toLocaleString("he-IL");
+  return formatKeifExact(n.toString());
 };
