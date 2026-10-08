@@ -621,3 +621,37 @@ All colors MUST be HSL.
 @media (prefers-reduced-motion: reduce) {
   .hw-float, .hw-sway, .hw-breathe, .hw-aura, .hw-ring, .hw-fog, .hw-spark { animation: none; }
 }
+
+/* Halloween shop upgrade: scene, preview, reveal, equipped (transform/opacity only) */
+@keyframes hw-bat { 0% { transform: translate(0,0) scale(.7); opacity: 0 } 10% { opacity: .9 } 50% { transform: translate(-60cqw,-12cqh) scale(1) } 90% { opacity: .8 } 100% { transform: translate(-120cqw,4cqh) scale(.7); opacity: 0 } }
+@keyframes hw-flap { 0%,100% { transform: scaleY(1) } 50% { transform: scaleY(.35) } }
+@keyframes hw-ember { 0% { transform: translate(0,0); opacity: 0 } 15% { opacity: 1 } 100% { transform: translate(var(--dx,6px),-70cqh); opacity: 0 } }
+@keyframes hw-wisp { 0%,100% { transform: translate(0,0) scale(1); opacity: .15 } 50% { transform: translate(8px,-14px) scale(1.15); opacity: .55 } }
+@keyframes hw-spider { 0%,100% { transform: translateY(0) } 50% { transform: translateY(28cqh) } }
+@keyframes hw-twinkle { 0%,100% { opacity: .15; transform: scale(.6) } 50% { opacity: 1; transform: scale(1) } }
+@keyframes hw-drift { 0% { transform: translateX(-20%) } 100% { transform: translateX(20%) } }
+@keyframes hw-react { 0% { transform: scale(1) } 30% { transform: scale(1.14) rotate(-4deg) } 60% { transform: scale(.96) rotate(3deg) } 100% { transform: scale(1) } }
+@keyframes hw-flash { 0% { opacity: .9; transform: scale(.4) } 100% { opacity: 0; transform: scale(1.6) } }
+@keyframes hw-reveal-in { 0% { filter: brightness(0); transform: scale(.7); opacity: .3 } 60% { filter: brightness(2.2); transform: scale(1.1); opacity: 1 } 100% { filter: brightness(1); transform: scale(1) } }
+@keyframes hw-converge { 0% { transform: translate(var(--dx),var(--dy)); opacity: 0 } 30% { opacity: 1 } 100% { transform: translate(0,0); opacity: 0 } }
+@keyframes hw-equip { 0%,100% { box-shadow: 0 0 0 1px hsl(var(--hw) / .6), 0 0 12px hsl(var(--hw) / .25) } 50% { box-shadow: 0 0 0 2px hsl(var(--hw) / .95), 0 0 26px hsl(var(--hw) / .5) } }
+@keyframes hw-pop { 0% { transform: scale(.6); opacity: 0 } 60% { transform: scale(1.08); opacity: 1 } 100% { transform: scale(1) } }
+@keyframes hw-silhouette { 0%,100% { opacity: .55 } 50% { opacity: .85 } }
+.hw-scene { container-type: size; }
+.hw-bat { animation: hw-bat linear infinite; }
+.hw-bat > svg { animation: hw-flap .28s ease-in-out infinite; }
+.hw-ember { animation: hw-ember ease-out infinite; opacity: 0; }
+.hw-wisp { animation: hw-wisp ease-in-out infinite; }
+.hw-spider { animation: hw-spider 5s ease-in-out infinite; }
+.hw-twinkle { animation: hw-twinkle ease-in-out infinite; }
+.hw-drift { animation: hw-drift 9s ease-in-out infinite alternate; }
+.hw-react { animation: hw-react .6s cubic-bezier(.22,1,.36,1); }
+.hw-flash { animation: hw-flash .7s ease-out forwards; }
+.hw-reveal-in { animation: hw-reveal-in 1.4s cubic-bezier(.22,1,.36,1) both; }
+.hw-converge { animation: hw-converge 1.2s ease-in forwards; }
+.hw-equipped { animation: hw-equip 2.4s ease-in-out infinite; }
+.hw-pop { animation: hw-pop .5s cubic-bezier(.22,1,.36,1) both; }
+.hw-silhouette { animation: hw-silhouette 3s ease-in-out infinite; }
+@media (prefers-reduced-motion: reduce) {
+  .hw-bat, .hw-bat > svg, .hw-ember, .hw-wisp, .hw-spider, .hw-twinkle, .hw-drift, .hw-equipped, .hw-silhouette { animation: none; }
+}
