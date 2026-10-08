@@ -603,7 +603,7 @@ All colors MUST be HSL.
 }
 
 /* Halloween skins: transform/opacity-only animations, paused off-screen via content-visibility */
-.hw-skin { contain: layout paint; }
+.hw-skin { isolation: auto; }
 @keyframes hw-float { 0%,100% { transform: translateY(0) } 50% { transform: translateY(-4%) } }
 @keyframes hw-sway { 0%,100% { transform: rotate(-2.5deg) } 50% { transform: rotate(2.5deg) } }
 @keyframes hw-breathe { 0%,100% { transform: scale(1) } 50% { transform: scale(1.04) } }
