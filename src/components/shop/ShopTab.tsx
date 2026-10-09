@@ -6,6 +6,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { ChevronDown, Check, Sparkles } from "lucide-react";
 import { SkinArt } from "./SkinArt";
+import { HalloweenShop } from "./HalloweenShop";
 import { TIERS, tierMeta, formatKeif, toBig, type SkinRow } from "@/lib/skins";
 import { playSound } from "@/lib/sounds";
 
@@ -180,37 +181,9 @@ export const ShopTab = ({ userCode }: Props) => {
         )}
 
         {sub === "halloween" && (
-          <div className="space-y-4">
-            <div className="relative overflow-hidden rounded-2xl border border-primary/30 bg-card/60 p-4 sm:p-5">
-              <div className="pointer-events-none absolute -left-10 -top-10 h-40 w-40 rounded-full bg-primary/15 blur-3xl" />
-              <div className="relative flex flex-wrap items-center justify-between gap-3">
-                <div className="min-w-0">
-                  <p className="text-base font-semibold">קולקציית האלווין · מהדורה מוגבלת</p>
-                  <p className="mt-0.5 text-xs text-muted-foreground">50 סקינים מונפשים. סקינים שנרכשו נשארים בבעלותך לתמיד.</p>
-                </div>
-                <span className={`rounded-full border px-3 py-1 text-xs ${hwOpen ? "border-primary/40 text-primary" : "border-border text-muted-foreground"}`}>
-                  {hwOpen ? (hwDaysLeft != null ? `זמין עוד ${hwDaysLeft} ימים · עד 1.1.2027` : "זמין עד 1.1.2027") : "הקולקציה הסתיימה"}
-                </span>
-              </div>
-            </div>
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-[repeat(auto-fill,minmax(170px,1fr))]">
-              {halloween.map((s) => {
-                const owned = ownedIds.has(s.id);
-                return (
-                  <div key={s.id} style={{ contentVisibility: "auto", containIntrinsicSize: "0 230px" }}>
-                    <SkinCard skin={s} owned={owned}>
-                      <p className="mt-1 text-xs tabular-nums text-muted-foreground">🪙 {formatKeif(s.price)}</p>
-                      <Button size="sm" className="mt-2 h-9 w-full rounded-xl" variant={owned || !hwOpen ? "outline" : "default"}
-                        disabled={owned || !hwOpen || busy === `b${s.id}`}
-                        onClick={() => run(`b${s.id}`, () => supabase.rpc("shop_buy_catalog", { _user_code: userCode, _skin_id: s.id }), `רכשת את ${s.name}`)}>
-                        {owned ? "בבעלותך" : !hwOpen ? "לא זמין" : busy === `b${s.id}` ? "רוכש..." : "קנה"}
-                      </Button>
-                    </SkinCard>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
+          <HalloweenShop skins={halloween} mine={mine} hwOpen={hwOpen} hwDaysLeft={hwDaysLeft} busy={busy}
+            onBuy={(s) => run(`b${s.id}`, () => supabase.rpc("shop_buy_catalog", { _user_code: userCode, _skin_id: s.id }), `רכשת את ${s.name}`)}
+            onEquip={(m) => equip(m as Mine)} />
         )}
 
         {sub === "mine" && (
