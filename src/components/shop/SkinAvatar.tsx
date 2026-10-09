@@ -24,7 +24,7 @@ export const SkinAvatar = ({ userCode, size = 28, refreshKey = 0 }: { userCode: 
   }, [userCode, refreshKey]);
   if (!skin) return null;
   return (
-    <span className="inline-flex shrink-0 items-center justify-center rounded-full border border-border/60 bg-background/60" style={{ width: size + 6, height: size + 6 }}>
+    <span className={`inline-flex shrink-0 items-center justify-center rounded-full border border-border/60 bg-background/60 ${skin.id > 100 ? "hw-equipped" : ""}`} style={{ width: size + 6, height: size + 6, ["--hw" as any]: "28 95% 55%" }}>
       <SkinArt skinId={skin.id} tier={skin.tier} size={size} />
     </span>
   );
