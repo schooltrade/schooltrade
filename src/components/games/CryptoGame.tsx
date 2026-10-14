@@ -89,7 +89,7 @@ interface EventData {
 const STORAGE_KEY = "crypto-game-state";
 
 // ===== Numeric safety constants & helpers =====
-const MAX_CAP = 1e12; // hard cap for any monetary value (price/balance/value)
+const MAX_CAP = 1e16; // hard cap for any monetary value (price/balance/value)
 const MIN_PRICE = 0.0001;
 const MAX_SPIKE_MULT = 1000; // clamp any single spike multiplier
 const MAX_PERCENT = 1e6; // clamp percentage display
