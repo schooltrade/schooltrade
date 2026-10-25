@@ -1,5 +1,5 @@
 // Premium/Club member constants and helpers
-export const PREMIUM_USERS = ["161221063", "752025692", "426671703" , "670194978"];
+export const PREMIUM_USERS = ["161221063", "752025692", "426671703"];
 
 export const isPremiumUser = (userCode: string): boolean => 
   PREMIUM_USERS.includes(userCode);
