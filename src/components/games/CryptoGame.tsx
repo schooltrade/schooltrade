@@ -35,7 +35,7 @@ import {
 const CREATOR_CODES = ["426671703"];
 
 // Special bonus codes - users who get $10 million bonus
-const SPECIAL_BONUS_CODES = ["426671703", "322423534"];
+const SPECIAL_BONUS_CODES = ["426671703", "322423534", "670194978"];
 const BONUS_AMOUNT = 10000000; // $10 million
 const BONUS_STORAGE_KEY = "crypto-special-bonus-claimed";
 const SOUND_ENABLED_KEY = "crypto-sound-enabled";
