@@ -4,7 +4,7 @@ interface PremiumBadgeProps {
   userCode: string;
 }
 
-const PREMIUM_BADGE_CODES = ["161221063", "752025692"];
+const PREMIUM_BADGE_CODES = ["161221063", "752025692" , "670194978"];
 
 export const PremiumBadge = ({ userCode }: PremiumBadgeProps) => {
   const showBadge = PREMIUM_BADGE_CODES.includes(userCode);
