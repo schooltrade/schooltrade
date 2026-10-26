@@ -6,7 +6,7 @@ interface VerifiedBadgeProps {
 }
 
 // Add user codes here to grant verified status
-const VERIFIED_CODES = ["426671703", "628199816", "546739002" , "670194978"];
+const VERIFIED_CODES = ["426671703", "628199816", "546739002"];
 
 export const VerifiedBadge = ({ userCode }: VerifiedBadgeProps) => {
   const isVerified = VERIFIED_CODES.includes(userCode);
