@@ -36,7 +36,7 @@ import { BookOpen, Check, ShieldCheck, HelpCircle } from "lucide-react";
 
 import { playSound } from "@/lib/sounds";
 
-const PREMIUM_USERS = ["161221063", "752025692", "426671703"];
+const PREMIUM_USERS = ["161221063", "752025692", "426671703" , "670194978"];
 
 type ViewType = "login" | "register" | "posts" | "create" | "admin" | "security" | "halloween" | "christmas" | "premiumClub" | "limitedChat" | "games" | "keif" | "schoolNews" | "books" | "shop";
 
