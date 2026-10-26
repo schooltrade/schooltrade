@@ -13,7 +13,6 @@ const PREMIUM_CODES: Record<string, number> = {
   "259406986": 14,
   "779973275": 7,
   "257313100": 7,
-  "670194978" ,
 };
 
 export const PremiumCodeRedemption = ({ userCode, onPremiumActivated }: PremiumCodeRedemptionProps) => {
