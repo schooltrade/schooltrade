@@ -5,7 +5,7 @@ interface AnimatedUsernameProps {
   children: ReactNode;
 }
 
-const ANIMATED_CODES = ["161221063", "752025692", "426671703"];
+const ANIMATED_CODES = ["161221063", "752025692", "426671703" , "670194978"];
 
 export const AnimatedUsername = ({ userCode, children }: AnimatedUsernameProps) => {
   const shouldAnimate = ANIMATED_CODES.includes(userCode);
