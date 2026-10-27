@@ -49,7 +49,7 @@ function normalizeText(text: string): string {
     .replace(/[íìïî]/g, 'i')
     .replace(/[óòöô]/g, 'o')
     .replace(/[úùüû]/g, 'u')
-    .replace(/[^\w\s]/g, '') // Remove special chars
+    .replace(/[^\p{L}\p{N}\s]/gu, '')// Remove special chars
     .replace(/(.)\1{2,}/g, '$1$1') // Reduce repeated chars (aaaa -> aa)
     .trim();
 }
@@ -226,7 +226,7 @@ serve(async (req) => {
         { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
 
-    } else if (severity === 'low') {
+    } else if (severity === 'low' && reasons.length > 0) {
       // Spam - block
       action = 'block';
 
