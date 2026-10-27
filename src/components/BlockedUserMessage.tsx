@@ -60,7 +60,7 @@ const BlockedUserMessage = ({ userName }: BlockedUserMessageProps) => {
                 על מנת לפתור את החסימה ולחזור לפעילות תקינה באתר, נדרש ממך ליצור קשר עם בעל האתר. אנא פנה/י באמצעות:
               </p>
               <p className="text-xl font-bold text-primary mt-2 text-center" dir="ltr">
-                +972 50 590 2283
+                +972 50 290 2283
               </p>
               <p className="mt-2 text-sm">
                 נציג האתר ישמח לסייע לך ולבדוק את האפשרות להסרת החסימה, בכפוף לתיקון הפרטים הנדרשים ולקבלת הבטחה שההתנהגות המפרה לא תחזור על עצמה.
