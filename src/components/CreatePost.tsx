@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useToast } from "@/hooks/use-toast";
 import { Camera, Upload, ImagePlus, Tag, FileText, Sparkles, SwitchCamera, X } from "lucide-react";
+import { filterContent } from "@/lib/security";
 
 interface CreatePostProps {
   userCode: string;
@@ -154,6 +155,18 @@ const CreatePost = ({ userCode, userName, onSuccess }: CreatePostProps) => {
     setUploadProgress(0);
 
     try {
+      const check = await filterContent(description.trim(), "post", userCode);
+
+if (!check.allowed) {
+  toast({
+    title: "מודעה נחסמה",
+    description: check.message || "התוכן לא אושר לפרסום",
+    variant: "destructive",
+  });
+  return;
+}
+
+const safeDescription = check.processedContent ?? description.trim();
       const postId = crypto.randomUUID();
       const ext = photoBlob.type === "image/png" ? "png" : "jpg";
       const fileName = `posts/${postId}.${ext}`;
@@ -188,7 +201,7 @@ const CreatePost = ({ userCode, userName, onSuccess }: CreatePostProps) => {
         id: postId,
         owner_code: userCode,
         owner_name: userName,
-        description: description.trim(),
+        description: safeDescription,
         price: price.trim(),
         photo_path: fileName,
         photo_url: urlData.publicUrl,
