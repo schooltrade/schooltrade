@@ -1,3 +1,4 @@
+import Decimal from "decimal.js";
 import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -72,7 +73,7 @@ interface Holding {
 }
 
 interface GameState {
-  balance: number;
+  balance: string;
   cryptos: Crypto[];
   portfolio: { [id: string]: number }; // Legacy - total amount owned
   holdings: { [id: string]: Holding[] }; // New - track each purchase with its buy percentage
@@ -324,7 +325,18 @@ const sanitizeGameState = (raw: any): GameState | null => {
     });
   }
 
-  const balance = Math.max(0, Math.min(MAX_CAP, safeNumber(raw.balance, 20)));
+  let balanceValue: Decimal;
+
+try {
+  balanceValue = new Decimal(String(raw.balance ?? 20));
+} catch {
+  balanceValue = new Decimal(20);
+}
+
+const balance =
+  balanceValue.isFinite() && balanceValue.greaterThanOrEqualTo(0)
+    ? balanceValue.toFixed(2)
+    : "20.00";
   const totalInvested = Math.max(0, Math.min(MAX_CAP, safeNumber(raw.totalInvested, 0)));
   const history = Array.isArray(raw.history) ? raw.history.slice(0, 50) : [];
 
@@ -473,7 +485,7 @@ export const CryptoGame = ({ userCode }: CryptoGameProps) => {
           if (!prev) return prev;
           return {
             ...prev,
-            balance: prev.balance + BONUS_AMOUNT,
+            balance: new Decimal(prev.balance).plus(BONUS_AMOUNT).toFixed(2),
             history: [
               { action: `🎁 בונוס מיוחד! קיבלת $10,000,000`, timestamp: Date.now() },
               ...prev.history,
@@ -494,7 +506,7 @@ export const CryptoGame = ({ userCode }: CryptoGameProps) => {
 
   const initializeNewGame = () => {
     setGameState({
-      balance: 20,
+      balance: "20.00",
       cryptos: initializeCryptos(),
       portfolio: {},
       holdings: {}, // Initialize empty holdings
@@ -720,7 +732,11 @@ export const CryptoGame = ({ userCode }: CryptoGameProps) => {
     }
 
     const totalCost = safeNumber(crypto.price * amount, 0);
-    if (!Number.isFinite(totalCost) || totalCost <= 0 || totalCost > gameState.balance) {
+    if (
+  !Number.isFinite(totalCost) ||
+  totalCost <= 0 ||
+  new Decimal(totalCost).greaterThan(gameState.balance)
+) {
       toast({ title: "אין מספיק כסף!", variant: "destructive" });
       return;
     }
@@ -756,7 +772,7 @@ export const CryptoGame = ({ userCode }: CryptoGameProps) => {
 
       return {
         ...prev,
-        balance: cap(safeNumber(prev.balance - totalCost, 0), MAX_CAP, 0),
+        balance: new Decimal(prev.balance).minus(totalCost).toFixed(2),
         portfolio: newPortfolio,
         holdings: newHoldings,
         cryptos: updatedCryptos,
@@ -862,7 +878,7 @@ export const CryptoGame = ({ userCode }: CryptoGameProps) => {
 
       return {
         ...prev,
-        balance: cap(safeNumber(prev.balance + finalValue, prev.balance), MAX_CAP, 0),
+        balance: new Decimal(prev.balance).plus(finalValue).toFixed(2),
         portfolio: newPortfolio,
         holdings: newHoldings,
         cryptos: updatedCryptos,
@@ -898,7 +914,7 @@ export const CryptoGame = ({ userCode }: CryptoGameProps) => {
       toast({ title: "ערכים לא תקינים!", variant: "destructive" });
       return;
     }
-    if (totalCost > gameState.balance) {
+    if (new Decimal(totalCost).greaterThan(gameState.balance)) {
       toast({ title: "אין מספיק כסף ליצירת המטבע!", variant: "destructive" });
       return;
     }
@@ -926,7 +942,7 @@ export const CryptoGame = ({ userCode }: CryptoGameProps) => {
 
       return {
         ...prev,
-        balance: prev.balance - totalCost,
+        balance: new Decimal(prev.balance).minus(totalCost).toFixed(2),
         cryptos: [...prev.cryptos, newCrypto].sort((a, b) => a.price - b.price),
         portfolio: {
           ...prev.portfolio,
@@ -958,12 +974,18 @@ export const CryptoGame = ({ userCode }: CryptoGameProps) => {
     }
   };
 
-  const formatPrice = (price: number) => {
-    if (price >= 1000000) return `$${(price / 1000000).toFixed(2)}M`;
-    if (price >= 1000) return `$${(price / 1000).toFixed(2)}K`;
-    if (price >= 1) return `$${price.toFixed(2)}`;
-    return `$${price.toFixed(6)}`;
-  };
+const formatPrice = (price: number | string | Decimal) => {
+  const value = new Decimal(price);
+
+  if (value.greaterThanOrEqualTo(1000000)) {
+    return `$${value.dividedBy(1000000).toFixed(2)}M`;
+  }
+  if (value.greaterThanOrEqualTo(1000)) {
+    return `$${value.dividedBy(1000).toFixed(2)}K`;
+  }
+  if (value.greaterThanOrEqualTo(1)) return `$${value.toFixed(2)}`;
+  return `$${value.toFixed(6)}`;
+};
 
   // Calculate portfolio value based on percentage-based profit/loss
   const getPortfolioValue = () => {
@@ -1034,9 +1056,9 @@ export const CryptoGame = ({ userCode }: CryptoGameProps) => {
     );
   }
 
-  const totalValue = gameState.balance + getPortfolioValue();
-  const profit = totalValue - 20; // Starting balance is now $20
-  const profitPercent = (profit / 20) * 100; // Percentage based on starting balance
+  const totalValue = new Decimal(gameState.balance).plus(getPortfolioValue());
+const profit = totalValue.minus(20);
+const profitPercent = profit.dividedBy(20).times(100);
 
   // Format time remaining
   const formatTimeRemaining = (ms: number) => {
@@ -1195,10 +1217,10 @@ export const CryptoGame = ({ userCode }: CryptoGameProps) => {
           : (isEventActive ? 'bg-gradient-to-br from-red-900/70 to-red-950/70 border-red-400/50 shadow-lg shadow-red-500/10' : 'bg-gradient-to-br from-red-900/50 to-red-950/50 border-red-500/30')
         }`}>
           <div className="text-sm text-muted-foreground">רווח/הפסד</div>
-          <div className={`text-2xl font-bold flex items-center gap-1 ${profit >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
-            {profit >= 0 ? <TrendingUp className="w-5 h-5" /> : <TrendingDown className="w-5 h-5" />}
-            {profitPercent >= 0 ? '+' : ''}{profitPercent.toFixed(2)}%
-          </div>
+          <div className={`text-2xl font-bold flex items-center gap-1 ${profit.greaterThanOrEqualTo(0) ? 'text-emerald-400' : 'text-red-400'}`}>
+  {profit.greaterThanOrEqualTo(0) ? <TrendingUp className="w-5 h-5" /> : <TrendingDown className="w-5 h-5" />}
+  {profitPercent.greaterThanOrEqualTo(0) ? '+' : ''}{profitPercent.toFixed(2)}%
+</div>
         </Card>
       </div>
 
@@ -1255,7 +1277,9 @@ export const CryptoGame = ({ userCode }: CryptoGameProps) => {
                 onClick={createCustomCrypto} 
                 className="w-full"
                 disabled={!newCryptoName || !newCryptoAmount || !newCryptoPrice || 
-                  (parseFloat(newCryptoAmount) * parseFloat(newCryptoPrice)) > gameState.balance}
+                  new Decimal(
+  parseFloat(newCryptoAmount) * parseFloat(newCryptoPrice)
+).greaterThan(gameState.balance)}
               >
                 <Coins className="w-4 h-4 ml-2" />
                 צור מטבע
@@ -1486,7 +1510,9 @@ export const CryptoGame = ({ userCode }: CryptoGameProps) => {
                 <Button
                   className="flex-1 bg-green-600 hover:bg-green-700"
                   onClick={() => buyCrypto(selectedCrypto, parseFloat(buyAmount || "0"))}
-                  disabled={!buyAmount || parseFloat(buyAmount) * selectedCrypto.price > gameState.balance}
+                  disabled={!buyAmount || new Decimal(
+  parseFloat(buyAmount) * selectedCrypto.price
+).greaterThan(gameState.balance)}
                 >
                   קנה
                 </Button>
@@ -1506,7 +1532,12 @@ export const CryptoGame = ({ userCode }: CryptoGameProps) => {
                     variant="outline"
                     size="sm"
                     onClick={() => {
-                      const maxCanBuy = gameState.balance / selectedCrypto.price;
+                      const maxCanBuy = Math.min(
+  new Decimal(gameState.balance)
+    .dividedBy(selectedCrypto.price)
+    .toNumber(),
+  MAX_CAP
+);
                       setBuyAmount((maxCanBuy * percent).toFixed(2));
                     }}
                   >
