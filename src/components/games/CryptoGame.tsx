@@ -1212,7 +1212,7 @@ const profitPercent = profit.dividedBy(20).times(100);
           <div className="text-sm text-muted-foreground">סה"כ</div>
           <div className="text-2xl font-bold text-purple-400">{formatPrice(totalValue)}</div>
         </Card>
-        <Card className={`p-4 ${profit >= 0 
+        <Card className={`p-4 ${profit.greaterThanOrEqualTo(0) 
           ? (isEventActive ? 'bg-gradient-to-br from-emerald-900/70 to-emerald-950/70 border-emerald-400/50 shadow-lg shadow-emerald-500/10' : 'bg-gradient-to-br from-emerald-900/50 to-emerald-950/50 border-emerald-500/30')
           : (isEventActive ? 'bg-gradient-to-br from-red-900/70 to-red-950/70 border-red-400/50 shadow-lg shadow-red-500/10' : 'bg-gradient-to-br from-red-900/50 to-red-950/50 border-red-500/30')
         }`}>
