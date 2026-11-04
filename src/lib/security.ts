@@ -1,4 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
+import { resolveModerationResult } from "./moderationResult";
 
 // Input sanitization
 export function sanitizeInput(input: string): string {
@@ -32,20 +33,9 @@ export async function filterContent(
       body: { content, contentType, userCode }
     });
 
-    if (error) {
-      console.error('Content filter error:', error);
-      // On error, allow but log
-      await logSecurityEvent('content_filter_error', 'warning', userCode, {
-        error: error.message,
-        contentType
-      });
-      return { allowed: true, processedContent: content };
-    }
-
-    return data;
-  } catch (error) {
-    console.error('Content filter exception:', error);
-    return { allowed: true, processedContent: content };
+    return await resolveModerationResult(data, error);
+  } catch {
+    return resolveModerationResult(null, new Error("moderation unavailable"));
   }
 }
 
