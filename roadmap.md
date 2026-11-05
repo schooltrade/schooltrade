@@ -1,5 +1,13 @@
 # Schooltrade major update
 
+## November 5 scope
+- [ ] Upgrade the existing messenger layout, conversation/message search, multiline composer and mobile back navigation; harden realtime ordering and deduplication.
+- [ ] Persist participant-only conversation hiding with confirmation (blocked: trusted account binding).
+- [ ] Add backend-authorized groups, private image uploads and original stickers (blocked: trusted account binding).
+- [ ] Implement secure own-account-code tab (blocked: trusted account binding).
+- [ ] Implement authoritative Crypto cloud persistence, approved legacy import and uncapped exact rewards (blocked: trusted account binding).
+- [ ] Verify the requested flows with real authorized accounts and report remaining gaps.
+
 - [x] Audit existing identity, permissions, games, messaging, bot and moderation; confirm live core policy exposures.
 - [x] Document approved implementation plan.
 - [ ] Agree safe legacy-account recovery (blocked: described verification is account-code possession, not independent proof after exposure).
