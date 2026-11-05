@@ -22,7 +22,9 @@ import { ChristmasDecorations } from "@/components/christmas/ChristmasDecoration
 import { ChristmasCountdown } from "@/components/christmas/ChristmasCountdown";
 import { ChristmasTabs } from "@/components/christmas/ChristmasTabs";
 import { PremiumClubTab } from "@/components/PremiumClubTab";
-import { LimitedChatTab } from "@/components/LimitedChatTab";
+import { PrivateChats } from "@/components/PrivateChats";
+import { SchooltradeBot } from "@/components/premium/SchooltradeBot";
+import { canUseMessaging } from "@/lib/chatAccess";
 import { Badge } from "@/components/ui/badge";
 import { GamesHub } from "@/components/games/GamesHub";
 import { KeifTab } from "@/components/keif/KeifTab";
@@ -38,13 +40,11 @@ import { playSound } from "@/lib/sounds";
 
 const PREMIUM_USERS = ["161221063", "752025692", "426671703" , "670194978"];
 
-type ViewType = "login" | "register" | "posts" | "create" | "admin" | "security" | "halloween" | "christmas" | "premiumClub" | "limitedChat" | "games" | "keif" | "schoolNews" | "books" | "shop";
+type ViewType = "login" | "register" | "posts" | "create" | "admin" | "security" | "halloween" | "christmas" | "premiumClub" | "limitedChat" | "games" | "keif" | "schoolNews" | "books" | "shop" | "bot";
 
 const Index = () => {
   const [user, setUser] = useState<{ code: string; name: string; role: string } | null>(null);
   const [view, setView] = useState<ViewType>("login");
-  const [hasLimitedChat, setHasLimitedChat] = useState(false);
-  const [unreadLimitedChat, setUnreadLimitedChat] = useState(0);
   const [mounted, setMounted] = useState(false);
   const [dbPremium, setDbPremium] = useState(false);
   const [schoolVerified, setSchoolVerified] = useState(() => sessionStorage.getItem("schoolVerified") === "true");
@@ -67,38 +67,6 @@ const Index = () => {
       playSound("pageLoad");
     }, 100);
   }, []);
-
-  const checkLimitedChat = async (userCode: string) => {
-    if (PREMIUM_USERS.includes(userCode)) {
-      setHasLimitedChat(false);
-      return;
-    }
-    try {
-      const currentMonth = new Date().toISOString().slice(0, 7);
-      const { data, error } = await supabase
-        .from("private_chats")
-        .select("id")
-        .eq("is_active", true)
-        .or(`user1_code.eq.${userCode},user2_code.eq.${userCode}`)
-        .gte("created_at", `${currentMonth}-01`);
-      if (!error && data && data.length > 0) {
-        setHasLimitedChat(true);
-        const lastRead = localStorage.getItem(`limited-chat-read-${userCode}`);
-        const lastReadTime = lastRead || new Date(0).toISOString();
-        const { count } = await supabase
-          .from("private_messages")
-          .select("*", { count: "exact", head: true })
-          .in("chat_id", data.map(c => c.id))
-          .neq("sender_code", userCode)
-          .gt("created_at", lastReadTime);
-        setUnreadLimitedChat(count || 0);
-      } else {
-        setHasLimitedChat(false);
-      }
-    } catch (e) {
-      console.error("Error checking limited chat:", e);
-    }
-  };
 
   const AUTO_PREMIUM_CODES: Record<string, number | "permanent"> = {
     "259406986": 14,
@@ -149,7 +117,6 @@ const Index = () => {
     if (savedCode && savedName) {
       setUser({ code: savedCode, name: savedName, role: savedRole || "user" });
       setView("posts");
-      checkLimitedChat(savedCode);
       checkDbPremium(savedCode);
     }
   }, []);
@@ -171,7 +138,6 @@ const Index = () => {
     sessionStorage.setItem("userRole", role);
     setView("posts");
     playSound("enter");
-    checkLimitedChat(code);
     checkDbPremium(code);
   };
 
@@ -387,28 +353,9 @@ const Index = () => {
               {isPremiumUser && (
                 <NavBtn v="premiumClub" label="🌟 חבר מועדון" className="bg-[#00C853]/10 border-[#00C853]/40" />
               )}
-              {!isPremiumUser && hasLimitedChat && (
-                <button
-                  onClick={() => {
-                    switchView("limitedChat");
-                    setUnreadLimitedChat(0);
-                    localStorage.setItem(`limited-chat-read-${user.code}`, new Date().toISOString());
-                  }}
-                  onMouseEnter={() => playSound("hover")}
-                  className={`relative min-w-0 px-4 py-2 rounded-md border-2 text-sm font-medium transition-all duration-300 ${
-                    view === "limitedChat"
-                      ? "bg-primary text-primary-foreground border-primary scale-[1.02] shadow-md"
-                      : "bg-card border-blue-500/30 hover:border-blue-400/60 hover:scale-[1.01]"
-                  }`}
-                >
-                  💬 צ'אט פרטי
-                  {unreadLimitedChat > 0 && (
-                    <Badge variant="destructive" className="absolute -top-2 -right-2 animate-pulse">
-                      {unreadLimitedChat}
-                    </Badge>
-                  )}
-                </button>
-              )}
+              {canUseMessaging(user) && <NavBtn v="limitedChat" label="💬 צ׳אטים" />}
+              {canUseMessaging(user) && <NavBtn v="bot" label="🤖 בוט סקולטרייד" />}
+
             </div>
 
 
@@ -426,7 +373,8 @@ const Index = () => {
               {view === "games" && <GamesHub userCode={user.code} userName={user.name} />}
               {view === "keif" && <KeifTab userCode={user.code} userName={user.name} />}
               {view === "premiumClub" && isPremiumUser && <PremiumClubTab userCode={user.code} userName={user.name} />}
-              {view === "limitedChat" && !isPremiumUser && hasLimitedChat && <LimitedChatTab userCode={user.code} userName={user.name} />}
+              {view === "limitedChat" && canUseMessaging(user) && <PrivateChats userCode={user.code} userName={user.name} />}
+              {view === "bot" && canUseMessaging(user) && <SchooltradeBot />}
               {view === "schoolNews" && <SchoolNews userCode={user.code} userName={user.name} />}
               {view === "shop" && <ShopTab userCode={user.code} userName={user.name} />}
               {view === "books" && <BooksTab userCode={user.code} userName={user.name} />}

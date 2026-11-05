@@ -1,3 +1,5 @@
+import { participantChats } from "@/lib/chatAccess";
+import { filterContent } from "@/lib/security";
 import { LinkifiedText } from "@/components/LinkifiedText";
 import { useState, useEffect, useCallback, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -51,10 +53,6 @@ interface UnreadCount {
   [chatId: string]: number;
 }
 
-const PREMIUM_USERS = ["161221063", "752025692", "426671703" , "670194978" ];
-const MAX_CHATS_PER_MONTH = 5;
-const MAX_MESSAGES_PER_SIDE = 5;
-
 // Notification sound (phone ringing style)
 const playNotificationSound = () => {
   try {
@@ -104,7 +102,8 @@ export const PrivateChats = ({ userCode, userName }: PrivateChatsProps) => {
   const [selectedChat, setSelectedChat] = useState<Chat | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState("");
-  const [myMessageCount, setMyMessageCount] = useState(0);
+  const [sending, setSending] = useState(false);
+  const sendingRef = useRef(false);
   const [showUserSelection, setShowUserSelection] = useState(false);
   const [availableUsers, setAvailableUsers] = useState<User[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
@@ -114,29 +113,7 @@ export const PrivateChats = ({ userCode, userName }: PrivateChatsProps) => {
   const { toast } = useToast();
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  const [dbPremium, setDbPremium] = useState<boolean | null>(null);
-  const isPremiumUser = PREMIUM_USERS.includes(userCode) || dbPremium === true;
-  const premiumLoading = dbPremium === null && !PREMIUM_USERS.includes(userCode);
   const currentMonth = new Date().toISOString().slice(0, 7);
-
-  // Sync premium status from DB so that users granted premium via subscription
-  // (e.g. code redemption) also get full access — not only the hardcoded list.
-  useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      try {
-        const { data } = await supabase
-          .from("users")
-          .select("is_premium")
-          .eq("code", userCode)
-          .maybeSingle();
-        if (!cancelled) setDbPremium(!!data?.is_premium);
-      } catch {
-        if (!cancelled) setDbPremium(false);
-      }
-    })();
-    return () => { cancelled = true; };
-  }, [userCode]);
 
   // Request notification permission on mount
   useEffect(() => {
@@ -209,10 +186,8 @@ export const PrivateChats = ({ userCode, userName }: PrivateChatsProps) => {
   }, [messages]);
 
   useEffect(() => {
-    if (isPremiumUser) {
-      loadChats();
-    }
-  }, [userCode, isPremiumUser]);
+    loadChats();
+  }, [userCode]);
 
   useEffect(() => {
     if (chats.length > 0) {
@@ -223,7 +198,6 @@ export const PrivateChats = ({ userCode, userName }: PrivateChatsProps) => {
   useEffect(() => {
     if (selectedChat) {
       loadMessages(selectedChat.id);
-      loadMessageCount(selectedChat.id);
       // Mark as read when selecting a chat
       saveLastReadTime(selectedChat.id);
       setUnreadCounts(prev => ({ ...prev, [selectedChat.id]: 0 }));
@@ -232,7 +206,7 @@ export const PrivateChats = ({ userCode, userName }: PrivateChatsProps) => {
 
   // Real-time subscription for new messages
   useEffect(() => {
-    if (!isPremiumUser || chats.length === 0) return;
+    if (chats.length === 0) return;
 
     const chatIds = chats.map(c => c.id);
     
@@ -283,7 +257,7 @@ export const PrivateChats = ({ userCode, userName }: PrivateChatsProps) => {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [isPremiumUser, chats, selectedChat, userCode, toast, saveLastReadTime, soundEnabled]);
+  }, [chats, selectedChat, userCode, toast, saveLastReadTime, soundEnabled]);
 
   const loadChats = async () => {
     try {
@@ -291,6 +265,7 @@ export const PrivateChats = ({ userCode, userName }: PrivateChatsProps) => {
         .from("private_chats")
         .select("*")
         .eq("is_active", true)
+        .or(`user1_code.eq.${userCode},user2_code.eq.${userCode}`)
         .order("last_message_at", { ascending: false });
 
       if (error) {
@@ -299,16 +274,7 @@ export const PrivateChats = ({ userCode, userName }: PrivateChatsProps) => {
         return;
       }
 
-      const userChats = (data || []).filter(
-        (chat: Chat) => chat.user1_code === userCode || chat.user2_code === userCode
-      );
-
-      const currentMonthChats = userChats.filter((chat: Chat) => {
-        const chatMonth = chat.created_at.slice(0, 7);
-        return chatMonth === currentMonth;
-      });
-
-      setChats(currentMonthChats);
+      setChats(participantChats(data || [], userCode));
     } catch (e) {
       console.error("Error in loadChats:", e);
     }
@@ -362,41 +328,7 @@ export const PrivateChats = ({ userCode, userName }: PrivateChatsProps) => {
     }
   };
 
-  const loadMessageCount = async (chatId: string) => {
-    try {
-      const { data, error } = await supabase
-        .from("private_chat_limits")
-        .select("message_count")
-        .eq("chat_id", chatId)
-        .eq("user_code", userCode)
-        .eq("month_year", currentMonth)
-        .maybeSingle();
-
-      if (error) {
-        console.error("Error loading message count:", error);
-        return;
-      }
-
-      setMyMessageCount(data?.message_count || 0);
-    } catch (e) {
-      console.error("Error in loadMessageCount:", e);
-    }
-  };
-
   const createChatWithUser = async (targetUser: User) => {
-    if (!isPremiumUser) {
-      toast({ title: "אין לך הרשאה ליצור צ'אטים", variant: "destructive" });
-      return;
-    }
-
-    if (chats.length >= MAX_CHATS_PER_MONTH) {
-      toast({ 
-        title: `הגעת למקסימום ${MAX_CHATS_PER_MONTH} צ'אטים לחודש`,
-        variant: "destructive" 
-      });
-      return;
-    }
-
     try {
       const { data: newChat, error } = await supabase
         .from("private_chats")
@@ -430,24 +362,22 @@ export const PrivateChats = ({ userCode, userName }: PrivateChatsProps) => {
   };
 
   const sendMessage = async () => {
-    if (!selectedChat || !newMessage.trim()) return;
-
-    if (myMessageCount >= MAX_MESSAGES_PER_SIDE) {
-      toast({
-        title: "הגעת למגבלת ההודעות לחודש זה.",
-        variant: "destructive",
-      });
-      return;
-    }
-
+    if (!selectedChat || !newMessage.trim() || sendingRef.current) return;
+    sendingRef.current = true;
+    setSending(true);
     try {
+      const moderation = await filterContent(newMessage.trim(), "chat", userCode);
+      if (!moderation.allowed || !moderation.processedContent) {
+        toast({ title: moderation.message || "לא ניתן לשלוח את ההודעה כרגע", variant: "destructive" });
+        return;
+      }
       const { error: messageError } = await supabase
         .from("private_messages")
         .insert({
           chat_id: selectedChat.id,
           sender_code: userCode,
           sender_name: userName,
-          content: newMessage.trim(),
+          content: moderation.processedContent,
           month_year: currentMonth,
         });
 
@@ -457,30 +387,6 @@ export const PrivateChats = ({ userCode, userName }: PrivateChatsProps) => {
         return;
       }
 
-      const { data: existingLimit } = await supabase
-        .from("private_chat_limits")
-        .select("id, message_count")
-        .eq("chat_id", selectedChat.id)
-        .eq("user_code", userCode)
-        .eq("month_year", currentMonth)
-        .maybeSingle();
-
-      if (existingLimit) {
-        await supabase
-          .from("private_chat_limits")
-          .update({ message_count: existingLimit.message_count + 1 })
-          .eq("id", existingLimit.id);
-      } else {
-        await supabase
-          .from("private_chat_limits")
-          .insert({
-            chat_id: selectedChat.id,
-            user_code: userCode,
-            month_year: currentMonth,
-            message_count: 1,
-          });
-      }
-
       await supabase
         .from("private_chats")
         .update({ last_message_at: new Date().toISOString() })
@@ -488,11 +394,13 @@ export const PrivateChats = ({ userCode, userName }: PrivateChatsProps) => {
 
       setNewMessage("");
       loadMessages(selectedChat.id);
-      setMyMessageCount(prev => prev + 1);
       loadChats();
     } catch (e) {
       console.error("Error in sendMessage:", e);
       toast({ title: "שגיאה בשליחת הודעה", variant: "destructive" });
+    } finally {
+      sendingRef.current = false;
+      setSending(false);
     }
   };
 
@@ -518,28 +426,7 @@ export const PrivateChats = ({ userCode, userName }: PrivateChatsProps) => {
     user.code.includes(searchQuery)
   );
 
-  const isMessageLimitReached = myMessageCount >= MAX_MESSAGES_PER_SIDE;
   const totalUnread = Object.values(unreadCounts).reduce((a, b) => a + b, 0);
-
-  if (!isPremiumUser) {
-    if (premiumLoading) {
-      return (
-        <Card className="p-8 text-center animate-fade-slide-in">
-          <MessageCircle className="w-16 h-16 mx-auto mb-4 text-muted-foreground animate-pulse" />
-          <h3 className="text-xl font-bold mb-2">טוען…</h3>
-        </Card>
-      );
-    }
-    return (
-      <Card className="p-8 text-center animate-fade-slide-in">
-        <MessageCircle className="w-16 h-16 mx-auto mb-4 text-muted-foreground" />
-        <h3 className="text-xl font-bold mb-2">צ'אטים פרטיים</h3>
-        <p className="text-muted-foreground">
-          תכונה זו זמינה רק לחברי מועדון
-        </p>
-      </Card>
-    );
-  }
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-4 h-[600px]" dir="rtl">
@@ -549,7 +436,7 @@ export const PrivateChats = ({ userCode, userName }: PrivateChatsProps) => {
           <div className="flex items-center justify-between">
             <h3 className="font-bold flex items-center gap-2">
               <Users className="w-5 h-5" />
-              צ'אטים ({chats.length}/{MAX_CHATS_PER_MONTH})
+              צ'אטים ({chats.length})
               {totalUnread > 0 && (
                 <Badge variant="destructive" className="mr-2 animate-pulse">
                   {totalUnread}
@@ -565,7 +452,6 @@ export const PrivateChats = ({ userCode, userName }: PrivateChatsProps) => {
               >
                 <Volume2 className={`w-4 h-4 ${soundEnabled ? "text-green-500" : "text-muted-foreground"}`} />
               </Button>
-              {chats.length < MAX_CHATS_PER_MONTH && (
                 <Dialog open={showUserSelection} onOpenChange={(open) => {
                   setShowUserSelection(open);
                   if (open) loadAvailableUsers();
@@ -614,7 +500,6 @@ export const PrivateChats = ({ userCode, userName }: PrivateChatsProps) => {
                     </div>
                   </DialogContent>
                 </Dialog>
-              )}
             </div>
           </div>
         </div>
@@ -685,9 +570,6 @@ export const PrivateChats = ({ userCode, userName }: PrivateChatsProps) => {
                 </h3>
                 <PremiumBadge userCode={getOtherUserCode(selectedChat)} />
               </div>
-              <p className="text-sm text-muted-foreground">
-                הודעות שלי: {myMessageCount}/{MAX_MESSAGES_PER_SIDE}
-              </p>
             </div>
 
             <ScrollArea className="flex-1 mb-3">
@@ -703,7 +585,7 @@ export const PrivateChats = ({ userCode, userName }: PrivateChatsProps) => {
                       key={msg.id}
                       className={`p-3 rounded-lg max-w-[80%] ${
                         msg.sender_code === userCode
-                          ? "bg-[#00C853] text-white mr-auto"
+                          ? "bg-primary text-primary-foreground mr-auto"
                           : "bg-muted ml-auto"
                       }`}
                     >
@@ -720,7 +602,7 @@ export const PrivateChats = ({ userCode, userName }: PrivateChatsProps) => {
                           minute: '2-digit' 
                         })}
                         {msg.sender_code === userCode && (
-                          <span className="text-blue-300">✓✓</span>
+                          <span>נשלח</span>
                         )}
                       </div>
                     </div>
@@ -730,11 +612,6 @@ export const PrivateChats = ({ userCode, userName }: PrivateChatsProps) => {
               </div>
             </ScrollArea>
 
-            {isMessageLimitReached ? (
-              <div className="bg-destructive/10 text-destructive p-3 rounded-lg text-center text-sm font-medium">
-                הגעת למגבלת ההודעות לחודש זה.
-              </div>
-            ) : (
               <div className="flex gap-2">
                 <Input
                   placeholder="כתוב הודעה..."
@@ -742,11 +619,10 @@ export const PrivateChats = ({ userCode, userName }: PrivateChatsProps) => {
                   onChange={(e) => setNewMessage(e.target.value)}
                   onKeyPress={(e) => e.key === 'Enter' && sendMessage()}
                 />
-                <Button onClick={sendMessage}>
+                <Button onClick={sendMessage} disabled={sending || !newMessage.trim()} aria-label="שלח הודעה">
                   <Send className="w-4 h-4" />
                 </Button>
               </div>
-            )}
           </>
         ) : (
           <div className="flex-1 flex items-center justify-center text-muted-foreground flex-col gap-2">
