@@ -1,23 +1,20 @@
 import { participantChats } from "@/lib/chatAccess";
 import { filterContent } from "@/lib/security";
-import { LinkifiedText } from "@/components/LinkifiedText";
+import { MessengerPanels } from "@/components/MessengerPanels";
+import { mergeTimeline } from "@/lib/messengerState";
 import { useState, useEffect, useCallback, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Card } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { MessageCircle, Send, Users, Plus, Bell, Volume2 } from "lucide-react";
 import { AnimatedUsername } from "./AnimatedUsername";
 import { PremiumBadge } from "./PremiumBadge";
-import { Badge } from "@/components/ui/badge";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 
 interface Chat {
@@ -111,7 +108,10 @@ export const PrivateChats = ({ userCode, userName }: PrivateChatsProps) => {
   const [lastReadTimes, setLastReadTimes] = useState<{ [chatId: string]: string }>({});
   const [soundEnabled, setSoundEnabled] = useState(true);
   const { toast } = useToast();
-  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const [loadingMessages, setLoadingMessages] = useState(false);
+  const [connected, setConnected] = useState(true);
+  const activeChatRef = useRef<string | null>(null);
+  const messageRequestRef = useRef(0);
 
   const currentMonth = new Date().toISOString().slice(0, 7);
 
@@ -180,10 +180,6 @@ export const PrivateChats = ({ userCode, userName }: PrivateChatsProps) => {
     setUnreadCounts(counts);
   }, [lastReadTimes, userCode]);
 
-  // Auto-scroll to bottom of messages
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
 
   useEffect(() => {
     loadChats();
@@ -196,6 +192,8 @@ export const PrivateChats = ({ userCode, userName }: PrivateChatsProps) => {
   }, [chats, lastReadTimes, calculateUnreadCounts]);
 
   useEffect(() => {
+    activeChatRef.current = selectedChat?.id || null;
+    setMessages([]);
     if (selectedChat) {
       loadMessages(selectedChat.id);
       // Mark as read when selecting a chat
@@ -211,7 +209,7 @@ export const PrivateChats = ({ userCode, userName }: PrivateChatsProps) => {
     const chatIds = chats.map(c => c.id);
     
     const channel = supabase
-      .channel("private-messages-notifications")
+      .channel(`private-messages-${crypto.randomUUID()}`)
       .on(
         "postgres_changes",
         {
@@ -222,7 +220,13 @@ export const PrivateChats = ({ userCode, userName }: PrivateChatsProps) => {
         (payload) => {
           const newMsg = payload.new as Message & { chat_id: string };
           
-          // Only notify if message is in one of our chats and not from us
+          if (chatIds.includes(newMsg.chat_id)) {
+            setChats(prev => prev.map(chat => chat.id === newMsg.chat_id ? { ...chat, last_message_at: newMsg.created_at } : chat).sort((a, b) => (b.last_message_at || b.created_at).localeCompare(a.last_message_at || a.created_at)));
+            if (activeChatRef.current === newMsg.chat_id) {
+              setMessages(prev => mergeTimeline(prev, [newMsg]));
+            }
+          }
+          // Notifications are only for incoming messages.
           if (chatIds.includes(newMsg.chat_id) && newMsg.sender_code !== userCode) {
             // Play notification sound
             if (soundEnabled) {
@@ -246,13 +250,13 @@ export const PrivateChats = ({ userCode, userName }: PrivateChatsProps) => {
               showBrowserNotification(newMsg.sender_name, newMsg.content);
             } else {
               // If in selected chat, add message and mark as read
-              setMessages(prev => [...prev, newMsg]);
+              setMessages(prev => mergeTimeline(prev, [newMsg]));
               saveLastReadTime(newMsg.chat_id);
             }
           }
         }
       )
-      .subscribe();
+      .subscribe(status => setConnected(status === "SUBSCRIBED"));
 
     return () => {
       supabase.removeChannel(channel);
@@ -309,6 +313,8 @@ export const PrivateChats = ({ userCode, userName }: PrivateChatsProps) => {
   };
 
   const loadMessages = async (chatId: string) => {
+    const requestId = ++messageRequestRef.current;
+    setLoadingMessages(true);
     try {
       const { data, error } = await supabase
         .from("private_messages")
@@ -322,9 +328,13 @@ export const PrivateChats = ({ userCode, userName }: PrivateChatsProps) => {
         return;
       }
 
-      setMessages(data || []);
+      if (activeChatRef.current === chatId && requestId === messageRequestRef.current) {
+        setMessages(prev => mergeTimeline(prev, data || []));
+      }
     } catch (e) {
       console.error("Error in loadMessages:", e);
+    } finally {
+      if (requestId === messageRequestRef.current) setLoadingMessages(false);
     }
   };
 
@@ -363,10 +373,12 @@ export const PrivateChats = ({ userCode, userName }: PrivateChatsProps) => {
 
   const sendMessage = async () => {
     if (!selectedChat || !newMessage.trim() || sendingRef.current) return;
+    const chatId = selectedChat.id;
+    const draft = newMessage;
     sendingRef.current = true;
     setSending(true);
     try {
-      const moderation = await filterContent(newMessage.trim(), "chat", userCode);
+      const moderation = await filterContent(draft.trim(), "chat", userCode);
       if (!moderation.allowed || !moderation.processedContent) {
         toast({ title: moderation.message || "לא ניתן לשלוח את ההודעה כרגע", variant: "destructive" });
         return;
@@ -374,7 +386,7 @@ export const PrivateChats = ({ userCode, userName }: PrivateChatsProps) => {
       const { error: messageError } = await supabase
         .from("private_messages")
         .insert({
-          chat_id: selectedChat.id,
+          chat_id: chatId,
           sender_code: userCode,
           sender_name: userName,
           content: moderation.processedContent,
@@ -390,10 +402,10 @@ export const PrivateChats = ({ userCode, userName }: PrivateChatsProps) => {
       await supabase
         .from("private_chats")
         .update({ last_message_at: new Date().toISOString() })
-        .eq("id", selectedChat.id);
+        .eq("id", chatId);
 
-      setNewMessage("");
-      loadMessages(selectedChat.id);
+      setNewMessage(current => current === draft ? "" : current);
+      if (activeChatRef.current === chatId) loadMessages(chatId);
       loadChats();
     } catch (e) {
       console.error("Error in sendMessage:", e);
@@ -404,233 +416,30 @@ export const PrivateChats = ({ userCode, userName }: PrivateChatsProps) => {
     }
   };
 
-  const getOtherUserName = (chat: Chat) => {
-    return chat.user1_code === userCode ? chat.user2_name : chat.user1_name;
-  };
+  const filteredUsers = availableUsers.filter(user => user.name.toLowerCase().includes(searchQuery.toLowerCase()));
 
-  const getOtherUserCode = (chat: Chat) => {
-    return chat.user1_code === userCode ? chat.user2_code : chat.user1_code;
-  };
-
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('he-IL', { 
-      day: 'numeric', 
-      month: 'numeric',
-      year: '2-digit'
-    });
-  };
-
-  const filteredUsers = availableUsers.filter(user =>
-    user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    user.code.includes(searchQuery)
-  );
-
-  const totalUnread = Object.values(unreadCounts).reduce((a, b) => a + b, 0);
-
-  return (
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 h-[600px]" dir="rtl">
-      {/* Chats List */}
-      <Card className="p-4 space-y-4">
-        <div className="space-y-3">
-          <div className="flex items-center justify-between">
-            <h3 className="font-bold flex items-center gap-2">
-              <Users className="w-5 h-5" />
-              צ'אטים ({chats.length})
-              {totalUnread > 0 && (
-                <Badge variant="destructive" className="mr-2 animate-pulse">
-                  {totalUnread}
-                </Badge>
-              )}
-            </h3>
-            <div className="flex items-center gap-2">
-              <Button
-                size="icon"
-                variant="ghost"
-                onClick={toggleSound}
-                title={soundEnabled ? "כבה צלילים" : "הפעל צלילים"}
-              >
-                <Volume2 className={`w-4 h-4 ${soundEnabled ? "text-green-500" : "text-muted-foreground"}`} />
-              </Button>
-                <Dialog open={showUserSelection} onOpenChange={(open) => {
-                  setShowUserSelection(open);
-                  if (open) loadAvailableUsers();
-                }}>
-                  <DialogTrigger asChild>
-                    <Button size="sm" variant="outline">
-                      <Plus className="w-4 h-4 ml-1" />
-                      חדש
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent className="max-w-md" dir="rtl">
-                    <DialogHeader>
-                      <DialogTitle>בחר משתמש לצ'אט חדש</DialogTitle>
-                    </DialogHeader>
-                    <div className="space-y-4">
-                      <Input
-                        placeholder="חפש לפי שם..."
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                      />
-                      <ScrollArea className="h-[300px]">
-                        <div className="space-y-2">
-                          {filteredUsers.length === 0 ? (
-                            <p className="text-center text-muted-foreground py-8">
-                              לא נמצאו משתמשים
-                            </p>
-                          ) : (
-                            filteredUsers.map((user) => (
-                              <Button
-                                key={user.code}
-                                variant="outline"
-                                className="w-full justify-start"
-                                onClick={() => createChatWithUser(user)}
-                              >
-                                <div className="flex items-center gap-2">
-                                  <AnimatedUsername userCode={user.code}>
-                                    {user.name}
-                                  </AnimatedUsername>
-                                  <PremiumBadge userCode={user.code} />
-                                </div>
-                              </Button>
-                            ))
-                          )}
-                        </div>
-                      </ScrollArea>
-                    </div>
-                  </DialogContent>
-                </Dialog>
-            </div>
-          </div>
-        </div>
-
-        <ScrollArea className="h-[480px]">
+  return <>
+    <MessengerPanels
+      chats={chats} selectedChat={selectedChat} messages={messages} userCode={userCode}
+      unreadCounts={unreadCounts} draft={newMessage} sending={sending} loading={loadingMessages}
+      connected={connected} soundEnabled={soundEnabled} onSelect={chat => { activeChatRef.current = chat?.id || null; setSelectedChat(chat); }}
+      onNew={() => { setShowUserSelection(true); loadAvailableUsers(); }}
+      onDraft={setNewMessage} onSend={sendMessage} onSound={toggleSound}
+    />
+    <Dialog open={showUserSelection} onOpenChange={setShowUserSelection}>
+      <DialogContent className="w-[calc(100%-2rem)] max-w-md" dir="rtl">
+        <DialogHeader><DialogTitle className="text-right">שיחה חדשה</DialogTitle></DialogHeader>
+        <Input aria-label="חיפוש משתמשים" placeholder="חיפוש לפי שם" value={searchQuery} onChange={e => setSearchQuery(e.target.value)} />
+        <ScrollArea className="h-[300px]">
           <div className="space-y-2">
-            {chats.length === 0 ? (
-              <div className="text-center text-muted-foreground py-8">
-                <MessageCircle className="w-12 h-12 mx-auto mb-2 opacity-50" />
-                <p className="text-sm">אין צ'אטים עדיין</p>
-                <p className="text-xs">לחץ על "חדש" כדי להתחיל</p>
-              </div>
-            ) : (
-              chats.map((chat, index) => {
-                const unread = unreadCounts[chat.id] || 0;
-                const hasUnread = unread > 0;
-                
-                return (
-                  <Button
-                    key={chat.id}
-                    variant={selectedChat?.id === chat.id ? "default" : "outline"}
-                    className={`w-full justify-start flex-col items-start h-auto py-3 relative ${
-                      hasUnread ? "border-green-500 bg-green-500/10" : ""
-                    }`}
-                    onClick={() => setSelectedChat(chat)}
-                  >
-                    <div className="flex items-center gap-2 w-full">
-                      <span className="text-xs bg-primary/20 px-2 py-0.5 rounded">
-                        #{index + 1}
-                      </span>
-                      <AnimatedUsername userCode={getOtherUserCode(chat)}>
-                        {getOtherUserName(chat)}
-                      </AnimatedUsername>
-                      <PremiumBadge userCode={getOtherUserCode(chat)} />
-                      
-                      {/* Unread Badge */}
-                      {hasUnread && (
-                        <Badge 
-                          variant="destructive" 
-                          className="mr-auto animate-pulse flex items-center gap-1"
-                        >
-                          <Bell className="w-3 h-3" />
-                          {unread}
-                        </Badge>
-                      )}
-                    </div>
-                    <div className="text-xs text-muted-foreground mt-1">
-                      נוצר: {formatDate(chat.created_at)}
-                    </div>
-                  </Button>
-                );
-              })
+            {filteredUsers.length === 0 ? <p className="py-8 text-center text-muted-foreground">לא נמצאו משתמשים</p> : filteredUsers.map(user =>
+              <Button key={user.code} variant="ghost" className="h-14 w-full justify-start" onClick={() => createChatWithUser(user)}>
+                <AnimatedUsername userCode={user.code}>{user.name}</AnimatedUsername><PremiumBadge userCode={user.code} />
+              </Button>
             )}
           </div>
         </ScrollArea>
-      </Card>
-
-      {/* Chat Messages */}
-      <Card className="md:col-span-2 p-4 flex flex-col">
-        {selectedChat ? (
-          <>
-            <div className="border-b pb-3 mb-3">
-              <div className="flex items-center gap-2">
-                <h3 className="font-bold">
-                  <AnimatedUsername userCode={getOtherUserCode(selectedChat)}>
-                    {getOtherUserName(selectedChat)}
-                  </AnimatedUsername>
-                </h3>
-                <PremiumBadge userCode={getOtherUserCode(selectedChat)} />
-              </div>
-            </div>
-
-            <ScrollArea className="flex-1 mb-3">
-              <div className="space-y-3 p-2">
-                {messages.length === 0 ? (
-                  <div className="text-center text-muted-foreground py-8">
-                    <p className="text-sm">אין הודעות עדיין</p>
-                    <p className="text-xs">שלח הודעה כדי להתחיל</p>
-                  </div>
-                ) : (
-                  messages.map((msg) => (
-                    <div
-                      key={msg.id}
-                      className={`p-3 rounded-lg max-w-[80%] ${
-                        msg.sender_code === userCode
-                          ? "bg-primary text-primary-foreground mr-auto"
-                          : "bg-muted ml-auto"
-                      }`}
-                    >
-                      <div className="text-xs opacity-70 mb-1 flex items-center gap-1">
-                        <AnimatedUsername userCode={msg.sender_code}>
-                          {msg.sender_name}
-                        </AnimatedUsername>
-                        <PremiumBadge userCode={msg.sender_code} />
-                      </div>
-                      <p className="break-words"><LinkifiedText text={msg.content} /></p>
-                      <div className="text-xs opacity-50 mt-1 flex items-center gap-1">
-                        {new Date(msg.created_at).toLocaleTimeString('he-IL', { 
-                          hour: '2-digit', 
-                          minute: '2-digit' 
-                        })}
-                        {msg.sender_code === userCode && (
-                          <span>נשלח</span>
-                        )}
-                      </div>
-                    </div>
-                  ))
-                )}
-                <div ref={messagesEndRef} />
-              </div>
-            </ScrollArea>
-
-              <div className="flex gap-2">
-                <Input
-                  placeholder="כתוב הודעה..."
-                  value={newMessage}
-                  onChange={(e) => setNewMessage(e.target.value)}
-                  onKeyPress={(e) => e.key === 'Enter' && sendMessage()}
-                />
-                <Button onClick={sendMessage} disabled={sending || !newMessage.trim()} aria-label="שלח הודעה">
-                  <Send className="w-4 h-4" />
-                </Button>
-              </div>
-          </>
-        ) : (
-          <div className="flex-1 flex items-center justify-center text-muted-foreground flex-col gap-2">
-            <MessageCircle className="w-12 h-12 opacity-50" />
-            <p>בחר צ'אט כדי להתחיל</p>
-          </div>
-        )}
-      </Card>
-    </div>
-  );
+      </DialogContent>
+    </Dialog>
+  </>;
 };
