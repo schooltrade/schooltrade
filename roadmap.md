@@ -1,12 +1,12 @@
 # Schooltrade major update
 
 ## November 5 scope
-- [ ] Upgrade the existing messenger layout, conversation/message search, multiline composer and mobile back navigation; harden realtime ordering and deduplication.
+- [x] Upgrade existing messenger layout, conversation/message search, multiline composer and mobile back navigation; timeline ordering/deduplication verified with 11 tests and desktop/mobile UI fixtures, not real-user sending.
 - [ ] Persist participant-only conversation hiding with confirmation (blocked: trusted account binding).
 - [ ] Add backend-authorized groups, private image uploads and original stickers (blocked: trusted account binding).
 - [ ] Implement secure own-account-code tab (blocked: trusted account binding).
 - [ ] Implement authoritative Crypto cloud persistence, approved legacy import and uncapped exact rewards (blocked: trusted account binding).
-- [ ] Verify the requested flows with real authorized accounts and report remaining gaps.
+- [ ] Verify requested flows with real authorized accounts (blocked: zero Auth accounts and no trusted legacy binding); partial report saved in .lovable/messenger-update-report.md.
 
 - [x] Audit existing identity, permissions, games, messaging, bot and moderation; confirm live core policy exposures.
 - [x] Document approved implementation plan.
@@ -16,7 +16,8 @@
 - [ ] Correct actual Club ×2 rewards across eligible normal games.
 - [x] Remove frontend Club gates and monthly chat/message quotas; share the existing chat across all entry points, retain old conversations, expose free bot navigation (nine tests passed; public preview loads without runtime errors).
 - [ ] Secure messaging/bot server authorization and abuse protection; verify two-user sending (blocked: no secure legacy-account binding or managed auth users; frontend access is not server authorization).
-- [ ] Redesign existing chats; add private photos and group conversations.
+- [x] Redesign existing chats; desktop/mobile presentation verified separately from backend authorization.
+- [ ] Add private photos and group conversations (blocked: trusted account binding).
 - [ ] Implement real voice calling and identify required TURN configuration.
 - [x] Fix content-filter response handling so backend blocks, network errors and malformed results do not authorize publication; six regression tests.
 - [ ] Repair multilingual server-side moderation across user-generated content and enforce it on authoritative writes.

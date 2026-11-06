@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { ArrowRight, Check, Loader2, MessageCircle, PenSquare, Search, Volume2, VolumeX, Send, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -27,6 +28,13 @@ export function MessengerPanels(props: Props) {
   const [search, setSearch] = useState('');
   const [messageSearch, setMessageSearch] = useState('');
   const [searchOpen, setSearchOpen] = useState(false);
+  const [mobile, setMobile] = useState(() => window.matchMedia('(max-width: 767px)').matches);
+  useEffect(() => {
+    const query = window.matchMedia('(max-width: 767px)');
+    const update = () => setMobile(query.matches);
+    query.addEventListener('change', update);
+    return () => query.removeEventListener('change', update);
+  }, []);
   const otherName = (chat: MessengerChat) => chat.user1_code === props.userCode ? chat.user2_name : chat.user1_name;
   const chats = props.chats.filter(chat => matchesMessage(otherName(chat), search));
   const messages = props.messages.filter(message => matchesMessage(message.content, messageSearch));
@@ -36,7 +44,7 @@ export function MessengerPanels(props: Props) {
     <section aria-label="צ׳אטים" className="grid h-[min(760px,calc(100dvh-180px))] min-h-[480px] w-full min-w-0 overflow-hidden border-y border-border bg-card md:grid-cols-[310px_minmax(0,1fr)] lg:grid-cols-[350px_minmax(0,1fr)]" dir="ltr">
       <aside dir="rtl" className={`min-h-0 min-w-0 flex-col border-border md:flex md:border-r ${props.selectedChat ? 'hidden' : 'flex'}`}>
         <header className="flex h-20 shrink-0 items-center justify-between gap-2 px-5">
-          <div className="flex min-w-0 items-center gap-2"><h2 className="text-xl font-semibold">הודעות</h2>{totalUnread > 0 && <span className="rounded-full bg-primary px-2 py-0.5 text-xs text-primary-foreground">{totalUnread}</span>}</div>
+          <div className="flex min-w-0 items-center gap-2"><h2 className="text-xl font-semibold motion-reduce:animate-none">הודעות</h2>{totalUnread > 0 && <span className="rounded-full bg-primary px-2 py-0.5 text-xs text-primary-foreground">{totalUnread}</span>}</div>
           <div className="flex shrink-0 gap-1">
             <Button size="icon" variant="ghost" aria-label={props.soundEnabled ? 'כבה צלילים' : 'הפעל צלילים'} title={props.soundEnabled ? 'כבה צלילים' : 'הפעל צלילים'} onClick={props.onSound}>{props.soundEnabled ? <Volume2 /> : <VolumeX />}</Button>
             <Button size="icon" variant="secondary" aria-label="שיחה חדשה" title="שיחה חדשה" onClick={props.onNew}><PenSquare /></Button>
@@ -52,12 +60,17 @@ export function MessengerPanels(props: Props) {
           </Button>)}
         </div>
       </aside>
-      <div dir="rtl" className={`min-h-0 min-w-0 flex-col bg-background md:relative md:flex ${props.selectedChat ? 'fixed inset-0 z-50 flex h-[100dvh] md:z-auto md:h-auto' : 'hidden'}`}>
+      {mobile && props.selectedChat ? createPortal(renderConversation(), document.body) : renderConversation()}
+    </section>
+  );
+
+  function renderConversation() {
+    return <div dir="rtl" className={`min-h-0 min-w-0 flex-col bg-background md:relative md:flex ${props.selectedChat ? 'fixed inset-0 z-50 flex h-[100dvh] md:z-auto md:h-auto' : 'hidden'}`}>
         {props.selectedChat ? <>
           <header className="flex min-h-20 shrink-0 items-center gap-3 border-b border-border bg-card px-4">
             <Button size="icon" variant="ghost" className="md:hidden" aria-label="חזרה לשיחות" onClick={() => select(null)}><ArrowRight /></Button>
             <span aria-hidden className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-primary/15 text-lg font-semibold text-primary">{otherName(props.selectedChat).slice(0, 1)}</span>
-            <h3 className="min-w-0 flex-1 truncate font-semibold">{otherName(props.selectedChat)}</h3>
+            <h3 className="min-w-0 flex-1 truncate font-semibold motion-reduce:animate-none">{otherName(props.selectedChat)}</h3>
             <Button size="icon" variant="ghost" aria-label={searchOpen ? 'סגור חיפוש הודעות' : 'חיפוש בהודעות'} title="חיפוש בהודעות" onClick={() => { setSearchOpen(!searchOpen); setMessageSearch(''); }}>{searchOpen ? <X /> : <Search />}</Button>
           </header>
           {!props.connected && <p role="status" className="border-b border-border bg-muted px-4 py-2 text-center text-xs text-muted-foreground">העדכון החי מתחבר מחדש…</p>}
@@ -84,7 +97,6 @@ export function MessengerPanels(props: Props) {
             <Button type="submit" size="icon" className="shrink-0" aria-label="שלח הודעה" title="שלח הודעה" disabled={props.sending || !props.draft.trim()}>{props.sending ? <Loader2 className="animate-spin" /> : <Send />}</Button>
           </form>
         </> : <div className="flex flex-1 flex-col items-center justify-center gap-4 text-muted-foreground"><MessageCircle className="h-16 w-16 text-primary/60" /><h3 className="text-xl text-foreground">השיחות שלך</h3><p className="text-sm">בחרו שיחה</p></div>}
-      </div>
-    </section>
-  );
+      </div>;
+  }
 }
