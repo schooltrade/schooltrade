@@ -846,7 +846,7 @@ export const CryptoGame = ({ userCode }: CryptoGameProps) => {
 
     weightedBuyPercentage = amount > 0 ? weightedBuyPercentage / amount : 0;
     const percentageDiff = safePercent(sellPercentage - weightedBuyPercentage);
-    const finalValue = Math.max(0, cap(safeNumber(totalInvested + totalProfit, 0), MAX_CAP, 0));
+    const finalValue = Math.max(0, safeNumber(totalInvested + totalProfit, 0));
 
     setGameState(prev => {
       if (!prev) return prev;
