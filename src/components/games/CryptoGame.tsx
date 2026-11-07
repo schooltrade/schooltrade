@@ -560,7 +560,7 @@ export const CryptoGame = ({ userCode }: CryptoGameProps) => {
       if (!prev) return prev;
 
       // Check for extreme spike event
-      const spikeChance = isCreator ? 0.01 : 0.001; // 1% for creators, 0.1% for regular users
+      const spikeChance = isCreator ? 0.10 : 0.001; // 1% for creators, 0.1% for regular users
       
       let triggeredSpike: { id: string; name: string; multiplier: number } | null = null;
       let triggeredSurge: { name: string; change: number } | null = null;
