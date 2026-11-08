@@ -225,9 +225,7 @@ const Index = () => {
             </div>
           )}
           </div>
-          {user && <div className="flex shrink-0 items-center max-sm:order-3 max-sm:w-full max-sm:justify-start sm:ml-0 lg:ml-auto"><DailyStreak userCode={user.code} /></div>}
-        </div>
-          {user && (
+          {user && <div className="flex shrink-0 items-center max-sm:order-3 max-sm:w-full max-sm:justify-start sm:ml-0 lg:ml-auto"><DailyStreak userCode={user.code} /></div> </div> {user && (
   <>קוד <bdi>{user.code}</bdi></>
 )}
       </header>
