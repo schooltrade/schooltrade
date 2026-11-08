@@ -225,13 +225,13 @@ const Index = () => {
             </div>
           )}
           </div>
-          {user && (
+          {user && <div className="flex shrink-0 items-center max-sm:order-3 max-sm:w-full max-sm:justify-start sm:ml-0 lg:ml-auto"><DailyStreak userCode={user.code} /></div>}
+        </div>
+                  {user && (
   <div className="flex items-center gap-1.5 rounded-full border border-primary/20 bg-primary/5 px-3 py-1.5 text-xs font-semibold text-muted-foreground">
     🪪 <bdi>{user.code}</bdi>
   </div>
 )}
-          {user && <div className="flex shrink-0 items-center max-sm:order-3 max-sm:w-full max-sm:justify-start sm:ml-0 lg:ml-auto"><DailyStreak userCode={user.code} /></div>}
-        </div>
       </header>
 
       <main className={`container mx-auto min-w-0 max-w-full px-4 py-8 ${isChristmasActive ? 'mt-10' : ''}`}>
