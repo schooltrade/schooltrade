@@ -224,6 +224,7 @@ const Index = () => {
               </Button>
             </div>
           )}
+                      </div>
 {user && (
   <div className="flex shrink-0 items-center gap-2 max-sm:order-3 max-sm:w-full max-sm:justify-start sm:ml-0 lg:ml-auto">
     <DailyStreak userCode={user.code} />
@@ -232,6 +233,7 @@ const Index = () => {
     </span>
   </div>
 )}
+                    </div>
       </header>
 
       <main className={`container mx-auto min-w-0 max-w-full px-4 py-8 ${isChristmasActive ? 'mt-10' : ''}`}>
