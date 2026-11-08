@@ -216,9 +216,6 @@ const Index = () => {
               <span className="text-sm text-muted-foreground flex min-w-0 items-center gap-1.5">
                 <SkinAvatar userCode={user.code} size={24} />
                 שלום, <AnimatedUsername userCode={user.code}><strong>{user.name}</strong></AnimatedUsername>
-                <span className="text-xs text-muted-foreground">
-  קוד: <bdi>{user.code}</bdi>
-</span>
                 <PremiumBadge userCode={user.code} />
                 <VerifiedBadge userCode={user.code} />
               </span>
@@ -230,6 +227,9 @@ const Index = () => {
           </div>
           {user && <div className="flex shrink-0 items-center max-sm:order-3 max-sm:w-full max-sm:justify-start sm:ml-0 lg:ml-auto"><DailyStreak userCode={user.code} /></div>}
         </div>
+        <span className="text-xs text-muted-foreground" dir="ltr">
+  Код: <bdi>{user.code}</bdi>
+</span>
       </header>
 
       <main className={`container mx-auto min-w-0 max-w-full px-4 py-8 ${isChristmasActive ? 'mt-10' : ''}`}>
