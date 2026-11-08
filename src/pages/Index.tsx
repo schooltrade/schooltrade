@@ -224,7 +224,7 @@ const Index = () => {
               </Button>
             </div>
           )}
-            {user && (
+{user && (
   <div className="flex items-center gap-1.5 rounded-full border border-primary/20 bg-primary/5 px-3 py-1.5 text-xs font-semibold text-muted-foreground">
     :קוד <bdi>{user.code}</bdi>
   </div>
