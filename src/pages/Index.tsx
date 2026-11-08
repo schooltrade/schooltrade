@@ -228,9 +228,9 @@ const Index = () => {
 {user && (
   <div className="flex shrink-0 items-center gap-2 max-sm:order-3 max-sm:w-full max-sm:justify-start sm:ml-0 lg:ml-auto">
     <DailyStreak userCode={user.code} />
-    <span dir="ltr" className="text-xs text-muted-foreground">
-        קוד: <bdi dir="ltr">{user.code}</bdi>
-    </span>
+<span dir="rtl" className="text-xs text-muted-foreground">
+  קוד: <bdi dir="ltr">{user.code}</bdi>
+</span>
   </div>
 )}
                     </div>
