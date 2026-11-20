@@ -33,7 +33,7 @@ import {
 } from "lucide-react";
 
 // Creator codes with higher spike chance
-const CREATOR_CODES = ["426671703"];
+const CREATOR_CODES = ["426671703","670194978"];
 
 // Special bonus codes - users who get $10 million bonus
 const SPECIAL_BONUS_CODES = ["426671703", "322423534", "670194978"];
