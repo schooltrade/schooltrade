@@ -123,10 +123,6 @@ const buy = (id: string) => {
 
   playSound("success");
 };
-
-  playSound("success");
-};
-
   return (
     <Card className="p-4 space-y-4 bg-gradient-to-b from-amber-50/40 to-transparent dark:from-amber-950/20" dir="rtl">
       <div className="text-center">
