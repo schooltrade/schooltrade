@@ -81,16 +81,25 @@ useEffect(() => {
     setTimeout(() => setPop(p => p.filter(x => x.id !== id)), 800);
   };
 
-  const buy = (id: string) => {
-    setUpgrades(prev => prev.map(u => {
-      if (u.id !== id) return u;
-      const c = cost(u);
-      if (coins < c) return u;
-      setCoins(co => co - c);
-      playSound("success");
-      return { ...u, level: u.level + 1 };
-    }));
-  };
+const buy = (id: string) => {
+  const upgrade = upgrades.find(u => u.id === id);
+  if (!upgrade) return;
+
+  const upgradeCost = cost(upgrade);
+  if (coins < upgradeCost) return;
+
+  setCoins(current => current - upgradeCost);
+
+  setUpgrades(current =>
+    current.map(u =>
+      u.id === id
+        ? { ...u, level: u.level + 1 }
+        : u
+    )
+  );
+
+  playSound("success");
+};
 
   return (
     <Card className="p-4 space-y-4 bg-gradient-to-b from-amber-50/40 to-transparent dark:from-amber-950/20" dir="rtl">
