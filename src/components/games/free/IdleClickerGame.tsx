@@ -126,7 +126,10 @@ export const IdleClickerGame = ({ userCode, userName }: Props) => {
                 <div className="text-3xl">{u.emoji}</div>
                 <div>
                   <div className="font-bold flex items-center gap-2">{u.name}<span className="text-xs px-1.5 py-0.5 bg-primary/20 rounded-md text-primary">לבל {u.level}</span></div>
-                  <div className="text-xs text-muted-foreground">{u.type === "click" ? `+${u.basePower} ללחיצה` : `+${u.basePower * Math.max(1, u.level)}/שנייה`}</div>
+                  <div className="text-xs text-muted-foreground">{u.type === "click"
+  ? `+${u.basePower} ללחיצה`
+  : `+${u.basePower * u.level}/שנייה`
+}</div>
                 </div>
               </div>
               <div className={`text-sm font-bold ${can ? "text-primary" : ""}`}>{c.toLocaleString()} 🍪</div>
