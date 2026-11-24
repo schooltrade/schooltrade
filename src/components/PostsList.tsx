@@ -1,3 +1,5 @@
+import { AnimatedUsername } from "@/components/AnimatedUsername";
+import { SkinAvatar } from "@/components/shop/SkinAvatar";
 import { LinkifiedText } from "@/components/LinkifiedText";
 import { useState, useEffect, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -446,13 +448,18 @@ const PostsList = ({ userCode, userName, isAdmin }: PostsListProps) => {
             {/* Header */}
             <div className="flex items-start justify-between gap-3">
               <div className="flex-1">
-                <div className="flex items-center gap-1.5">
-                  <AnimatedUsername userCode={post.owner_code}>
-                    <p className="text-base font-semibold text-foreground">{post.owner_name}</p>
-                  </AnimatedUsername>
-                  <PremiumBadge userCode={post.owner_code} />
-                  <VerifiedBadge userCode={post.owner_code} />
-                </div>
+<div className="flex items-center gap-2">
+  <SkinAvatar userCode={post.owner_code} size={28} />
+
+  <AnimatedUsername userCode={post.owner_code}>
+    <p className="text-base font-semibold text-foreground">
+      {post.owner_name}
+    </p>
+  </AnimatedUsername>
+
+  <PremiumBadge userCode={post.owner_code} />
+  <VerifiedBadge userCode={post.owner_code} />
+</div>
                 <p className="mt-1 flex items-center gap-1.5 text-xs text-muted-foreground">
                   <CalendarDays className="h-3.5 w-3.5" aria-hidden="true" />
                   {new Date(post.created_at).toLocaleDateString("he-IL")}
