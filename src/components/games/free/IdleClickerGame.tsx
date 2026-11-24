@@ -7,7 +7,16 @@ import { playSound } from "@/lib/sounds";
 
 interface Props { userCode: string; userName: string; }
 
-interface Upgrade { id: string; name: string; emoji: string; baseCost: number; basePower: number; level: number; type: "click" | "auto"; }
+interface Upgrade {
+  id: string;
+  name: string;
+  emoji: string;
+  baseCost: number;
+  basePower: number;
+  level: number;
+  income?: number;
+  type: "click" | "auto";
+}
 
 const KEY = (uc: string) => `idle-clicker-${uc}`;
 
@@ -29,7 +38,9 @@ export const IdleClickerGame = ({ userCode, userName }: Props) => {
   const popId = useRef(0);
 
   const clickPower = upgrades.filter(u => u.type === "click").reduce((s, u) => s + u.basePower * u.level, 0) + 1;
-  const autoPower = upgrades.filter(u => u.type === "auto").reduce((s, u) => s + u.basePower * u.level, 0);
+  const autoPower = upgrades
+  .filter(u => u.type === "auto")
+  .reduce((s, u) => s + (u.income ?? u.basePower * u.level), 0);
 
   // load
   useEffect(() => {
@@ -91,12 +102,27 @@ const buy = (id: string) => {
   setCoins(current => current - upgradeCost);
 
   setUpgrades(current =>
-    current.map(u =>
-      u.id === id
-        ? { ...u, level: u.level + 1 }
-        : u
-    )
+    current.map(u => {
+      if (u.id !== id) return u;
+
+      const nextLevel = u.level + 1;
+
+      if (u.type === "auto") {
+        const currentIncome = u.income ?? u.basePower * u.level;
+
+        return {
+          ...u,
+          level: nextLevel,
+          income: currentIncome + u.basePower * nextLevel
+        };
+      }
+
+      return { ...u, level: nextLevel };
+    })
   );
+
+  playSound("success");
+};
 
   playSound("success");
 };
