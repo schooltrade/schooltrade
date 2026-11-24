@@ -48,11 +48,16 @@ export const IdleClickerGame = ({ userCode, userName }: Props) => {
     try { localStorage.setItem(KEY(userCode), JSON.stringify({ coins, upgrades })); } catch {}
   }, [coins, upgrades, userCode]);
 
-  // auto income tick (10/sec)
-  useEffect(() => {
-    const id = setInterval(() => setCoins(c => c + autoPower / 10), 100);
-    return () => clearInterval(id);
-  }, [autoPower]);
+// Add the full automatic income once every second.
+useEffect(() => {
+  if (autoPower <= 0) return;
+
+  const id = window.setInterval(() => {
+    setCoins(currentCoins => currentCoins + autoPower);
+  }, 1000);
+
+  return () => window.clearInterval(id);
+}, [autoPower]);
 
   // submit best score every 30s if grew significantly
   useEffect(() => {
